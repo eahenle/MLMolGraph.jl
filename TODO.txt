@@ -1,0 +1,17 @@
+Pre-process data:
+	- convert to primitive cell (DONE)
+	- filter out problematic structures (DONE)
+
+Process data:
+	- cif2jld (DONE)
+	- bonds2jld (DONE)
+	- atom_mats
+	- xf_mats
+	- f2c_mats
+	- adj_mats
+	- d_mats
+	- atom2int
+	- targets
+	
+Export data:
+	- NPZ
