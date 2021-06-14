@@ -50,8 +50,14 @@ end
 function xtals2primitive(xtal_list)
     @sync @distributed for xtal_file ∈ xtal_list
         cached("primitive/$xtal_file") do 
-            xtal = Crystal(xtal_file, remove_duplicates=true)
-            return primitive_cell(xtal)
+            try
+                xtal = Crystal(xtal_file, remove_duplicates=true)
+                return primitive_cell(xtal)
+            catch
+                return Crystal("bad input", unit_cube(), 
+                    Atoms([:foo], Frac([0.;0.;0.])), 
+                    Charges{Frac}(0))
+            end
         end
     end    
 end
