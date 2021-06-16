@@ -1,4 +1,4 @@
-name = "COFProcessing"
+name = "MLMolGraph"
 uuid = "95df4b36-cca9-11eb-b8bc-0242ac130003"
 authors = ["SimonEnsemble <cory.simon@oregonstate.edu>"]
 version = "0.0.1"
@@ -17,3 +17,7 @@ Xtals = "ede5f01d-793e-4c47-9885-c447d1f18d6d"
 [compat]
 Reexport = "^1.1.0"
 Xtals = "^0.3.2"
+
+[extras]
+ArgParse = "c7e460c6-2fb9-53a9-8c5b-16f535851c63"
+FIGlet = "3064a664-84fe-4d92-92c7-ed492f3d8fae"

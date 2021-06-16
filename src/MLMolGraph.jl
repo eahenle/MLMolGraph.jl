@@ -1,4 +1,4 @@
-module COFProcessing
+module MLMolGraph
 
 using CSV, DataFrames, Distributed, JLD2, LightGraphs, MetaGraphs, NPZ, Reexport
 

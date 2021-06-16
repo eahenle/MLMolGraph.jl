@@ -1,25 +1,35 @@
-# set up environment and paths
-using CSV, Distributed, NPZ
+#!/usr/bin/env julia
+
+# parse run flags/args
+using ArgParse
+argparser = ArgParseSettings()
+@add_arg_table argparser begin
+    "--clear_cache"
+        help = "delete the cache"
+        action = :store_true
+    "--target", "-t"
+        help = "training target"
+        arg_type = String
+        default = "deliverable capacity [v STP/v]"
+end
+args = parse_args(argparser, as_symbols=true)
+
+using CSV, Distributed, FIGlet, NPZ
 @everywhere begin
     import Pkg
     Pkg.activate(".")
 end
-@everywhere using COFProcessing
+@everywhere using MLMolGraph
 
 
-@info "\n\n\tCOF Processing\n\n\n"
+FIGlet.render("MLMolGraph", FIGlet.availablefonts()[51])
 
 
-if length(ARGS) == 1 && ARGS[1] == "reset"
+if args[:clear_cache]
     @info "Clearing cache..."
     clear_cache()
 end
-
-
-# choose target
-target_symbol = Symbol("deliverable capacity [v STP/v]")
-
-@info "Target: $target_symbol"
+@info "Target: $(args[:target])"
 
 
 # get list of xtals
@@ -51,10 +61,10 @@ CSV.write("atom_to_int.csv", element_to_int)
 
 @info "Reading target data..."
 df = cached("targets.jld2") do 
-    return read_targets("properties.csv", good_xtals, target_symbol)
+    return read_targets("properties.csv", good_xtals, args[:target])
 end
 CSV.write(joinpath("cofs.csv"), df)
-npzwrite("y.npy", df[:, target_symbol])
+npzwrite("y.npy", df[:, args[:target]])
 
 
 @info "Processing examples..."
