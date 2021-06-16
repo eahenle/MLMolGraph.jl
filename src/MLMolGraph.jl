@@ -1,8 +1,9 @@
 module MLMolGraph
+using Distributed
 
-using CSV, DataFrames, Distributed, JLD2, LightGraphs, MetaGraphs, NPZ, Reexport
+@everywhere using CSV, DataFrames, Distributed, JLD2, LightGraphs, MetaGraphs, NPZ, Reexport
 
-@reexport using Xtals
+@everywhere @reexport using Xtals
 
 
 function __init__()
@@ -35,8 +36,7 @@ function clear_cache()
 end
 
 
-function cached(f, cachefile)
-    cachefile = joinpath(rc[:paths][:data], "cache", cachefile)
+@everywhere function _cached(f, cachefile)
     if isfile(cachefile)
         @load cachefile obj
     else
@@ -47,9 +47,16 @@ function cached(f, cachefile)
 end
 
 
+function cached(f, cachefile)
+    cachefile = joinpath(rc[:paths][:data], "cache", cachefile)
+    _cached(f, cachefile)
+end
+
+
 function xtals2primitive(xtal_list)
-    @sync @distributed for xtal_file ∈ xtal_list
-        cached("primitive/$xtal_file") do 
+    xtal_paths = [joinpath(rc[:cache][:primitive], xtal) for xtal ∈ xtal_list]
+    @sync @distributed for xtal_file ∈ xtal_paths
+        _cached(xtal_file) do 
             try
                 xtal = Crystal(xtal_file, remove_duplicates=true)
                 return primitive_cell(xtal)
@@ -70,19 +77,25 @@ function isgood(xtal_file)
 end
 
 
-function bondNclassify(xtal_list)
-    @sync @distributed for xtal_file ∈ xtal_list
-        cached("bonded_xtals/$xtal_file") do 
-            @load joinpath(rc[:cache][:primitive], xtal_file) obj
-            xtal = obj
-            if infer_bonds!(xtal, true)
-                good = true
-            else
-                good = false
-            end
-            return (xtal, good)
+@everywhere function _bondNclassify(xtal_name, primitive_cache, bonded_cache)
+    _cached(joinpath(bonded_cache, xtal_name)) do 
+        @load joinpath(primitive_cache, xtal_file) obj
+        xtal = obj
+        if infer_bonds!(xtal, true)
+            good = true
+        else
+            good = false
         end
+        return (xtal, good)
     end
+end
+
+
+function bondNclassify(xtal_list)
+    l = length(xtal_list)
+    pcs = [rc[:cache][:primitive] for _ ∈ 1:l]
+    bcs = [rc[:cache][:bonded_xtals] for _ ∈ 1:l]
+    pmap(_bondNclassify, xtal_list, pcs, bcs)
     return [xtal_file for xtal_file ∈ xtal_list if isgood(xtal_file)]
 end
 
@@ -146,46 +159,66 @@ function edge_vectors(graph)
 end
 
 
-function bond_angle_matrix(xtal)
-    angles = Array{Float64}(undef, xtal.atoms.n, xtal.atoms.n, xtal.atoms.n)
+function bond_angle_vecs(xtal)
+    I = Int[]
+    J = Int[]
+    K = Int[]
+    θ = Float64[]
     for BA ∈ edges(xtal.bonds)
         A = dst(BA)
         B = src(BA)
-        for BC ∈ edges(xtal.bonds)
-            C = dst(BC)
-            angles[A, B, C] = angles[C, B, A] = bond_angle(xtal, A, B, C)
+        for C ∈ neighbors(xtal.bonds, B)
+            if A == C # only need actual 3-body angles
+                continue
+            end
+            α = bond_angle(xtal, A, B, C)
+            # ∠ABC = ∠CBA
+            append!(I, A)
+            append!(J, B)
+            append!(K, C)
+            append!(θ, α)
+            append!(I, C)
+            append!(J, B)
+            append!(K, A)
+            append!(θ, α)
         end
     end
     return angles
 end
 
 
-function write_data(xtal, name, element_to_int, max_valency)
+@everywhere function write_data(xtal, name, element_to_int, max_valency, graphs_path)
     X = node_feature_matrix(xtal, max_valency, element_to_int)
     X_name = chop(name, tail=4)
 	# bond graph
 	A, B, D = edge_vectors(xtal.bonds)
-    npzwrite(joinpath(rc[:paths][:graphs], X_name * "_node_features.npy"), X)
-    npzwrite(joinpath(rc[:paths][:graphs], X_name * "_edges_src.npy"), A)
-    npzwrite(joinpath(rc[:paths][:graphs], X_name * "_edges_dst.npy"), B)
-    npzwrite(joinpath(rc[:paths][:graphs], X_name * "_euc.npy"), D)
+    npzwrite(joinpath(graphs_path, X_name * "_node_features.npy"), X)
+    npzwrite(joinpath(graphs_path, X_name * "_edges_src.npy"), A)
+    npzwrite(joinpath(graphs_path, X_name * "_edges_dst.npy"), B)
+    npzwrite(joinpath(graphs_path, X_name * "_euc.npy"), D)
 	# bond angles
-    angleABC = bond_angle_matrix(xtal)
-    npzwrite(joinpath(rc[:paths][:graphs], X_name * "_angles.npy"), angleABC)
+    I, J, K, θ = bond_angle_vecs(xtal)
+    npzwrite(joinpath(graphs_path, X_name * "_angles_I.npy"), I)
+    npzwrite(joinpath(graphs_path, X_name * "_angles_J.npy"), J)
+    npzwrite(joinpath(graphs_path, X_name * "_angles_K.npy"), K)
+    npzwrite(joinpath(graphs_path, X_name * "_angles_theta.npy"), θ)
 end
 
 
-function process_example(xtal_name, element_to_int, max_valency)
-    @load joinpath(rc[:cache][:bonded_xtals], xtal_name) obj
+@everywhere function process_example(xtal_name, element_to_int, max_valency, bonded_xtals_cache, graphs_path)
+    @load joinpath(bonded_xtals_cache, xtal_name) obj
     xtal, _ = obj
-    write_data(xtal, xtal_name, element_to_int, max_valency)
+    write_data(xtal, xtal_name, element_to_int, max_valency, graphs_path)
 end
 
 
 function process_examples(good_xtals, element_to_int, max_valency)
-    els = [element_to_int for _ ∈ 1:length(good_xtals)]
-    mvs = [max_valency for _ ∈ 1:length(good_xtals)]
-    pmap(process_example, good_xtals, els, mvs)
+    l = length(good_xtals)
+    els = [element_to_int for _ ∈ 1:l]
+    mvs = [max_valency for _ ∈ 1:l]
+    bxc = [rc[:cache][:bonded_xtals] for _ ∈ 1:l]
+    gps = [rc[:paths][:graphs] for _ ∈ 1:l]
+    pmap(process_example, good_xtals, els, mvs, bxc, gps)
 end
 
 
