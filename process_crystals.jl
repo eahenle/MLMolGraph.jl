@@ -7,8 +7,8 @@ argparser = ArgParseSettings(
 @add_arg_table argparser begin
     "--target", "-t"
         help = "training target"
-        arg_type = String
-        default = "deliverable capacity [v STP/v]"
+        arg_type = Symbol
+        default = Symbol("deliverable capacity [v STP/v]")
     "--data", "-d"
         help = "root of data tree. inputs loaded from `crystals` subdirectory."
         arg_type = String
@@ -40,7 +40,7 @@ using CSV, FIGlet, MLMolGraph, NPZ
 
 FIGlet.render("MLMolGraph", FIGlet.availablefonts()[64])
 @info "Loading data from $(args[:data])"
-@info "Cache at $(rc[:paths][:data]/cache)"
+@info "Cache at $(rc[:paths][:data])/cache"
 @info "Target: $(args[:target])"
 
 set_paths(args[:data])

@@ -18,7 +18,8 @@ function clear_cache()
 end
 
 
-@everywhere function _cached(f, cachefile)
+function cached(f::Function, cachefile::String)
+    cachefile = joinpath(rc[:paths][:data], "cache", cachefile)
     if isfile(cachefile)
         @load cachefile obj
     else
@@ -26,10 +27,4 @@ end
         @save cachefile obj
     end
     return obj
-end
-
-
-function cached(f, cachefile)
-    cachefile = joinpath(rc[:paths][:data], "cache", cachefile)
-    _cached(f, cachefile)
 end

@@ -1,25 +1,25 @@
 struct VoroTess
-    xtal
-    cells
-    box
-    atom_pts
-    n_dict
+    xtal::Crystal
+    cells::Vector{Vector{Vector{Float64}}}
+    box_params::Vector{Float64}
+    atom_pts::Matrix{Float64}
+    n_dict::Dict{Int,Int}
 end
 
 
 struct VoroPoint
-    coords
-    cells
+    coords::Matrix{Float64}
+    cells::Vector{Int}
 end
 
 
 struct VoroCell
-    vertices
-    neighbors
+    vertices::Vector{Int}
+    neighbors::Vector{Int}
 end
 
 
-function neighbor_dict(n_list)
+function neighbor_dict(n_list::Vector{Tuple{Int,Int}})::Dict{Int,Int}
     n_dict = Dict()
     for (i, j) ∈ n_list
         if i ∈ keys(n_dict)
@@ -41,7 +41,7 @@ end
 
 
 # calculates the Voronoi tesselation
-function voronoi_tesselation(points::Matrix{Float64}, box_params::Array{Float64,1})
+function voronoi_tesselation(points::Matrix{Float64}, box_params::Array{Float64,1})::VoroTess
     freud = rc[:freud]
     box = freud.box.Box.from_box(box_params)
     voro = freud.locality.Voronoi()
@@ -55,7 +55,7 @@ end
 voronoi_tesselation(xtal::Crystal) = voronoi_tesselation(shift_coords(xtal), convert_box(xtal.box))
 
 
-function unique_voro_pts(vt)
+function unique_voro_pts(vt::VoroTess)::Vector{VoroPoint}
     points = VoroPoint[]
     cells = Array{VoroCell}(undef, length(vt.cells))
     # loop over vt.cells

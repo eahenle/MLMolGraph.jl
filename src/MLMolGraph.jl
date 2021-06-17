@@ -1,10 +1,10 @@
 module MLMolGraph
 using Distributed
 
-@everywhere using CSV, DataFrames, JLD2, LightGraphs, MetaGraphs, NPZ, Reexport
+using CSV, DataFrames, JLD2, LightGraphs, MetaGraphs, NPZ, Reexport
 
 @reexport using PorousMaterials # for user access to API
-@everywhere using PorousMaterials # for distributed tasks
+using PorousMaterials # for distributed tasks
 
 include("cache_tools.jl")
 include("processing.jl")

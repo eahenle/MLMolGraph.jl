@@ -1,7 +1,7 @@
-function xtals2primitive(xtal_list)
+function xtals2primitive(xtal_list::Vector{String})
     xtal_paths = [joinpath(rc[:cache][:primitive], xtal) for xtal ∈ xtal_list]
     @sync @distributed for xtal_file ∈ xtal_paths
-        _cached(xtal_file) do 
+        cached(xtal_file) do 
             try
                 xtal = Crystal(xtal_file, remove_duplicates=true)
                 return primitive_cell(xtal)
@@ -15,16 +15,16 @@ function xtals2primitive(xtal_list)
 end
 
 
-function isgood(xtal_file)
+function isgood(xtal_file::String)::Bool
     @load joinpath(rc[:cache][:bonded_xtals], xtal_file) obj
     _, good = obj
     return good
 end
 
 
-@everywhere function _bondNclassify(xtal_name, primitive_cache, bonded_cache)
-    _cached(joinpath(bonded_cache, xtal_name)) do 
-        @load joinpath(primitive_cache, xtal_file) obj
+function _bondNclassify(xtal_name::String, primitive_cache::String, bonded_cache::String)::Tuple{Crystal,Bool}
+    cached(joinpath(bonded_cache, xtal_name)) do 
+        @load joinpath(primitive_cache, xtal_name) obj
         xtal = obj
         if infer_bonds!(xtal, true)
             good = true
@@ -36,7 +36,7 @@ end
 end
 
 
-function bondNclassify(xtal_list)
+function bondNclassify(xtal_list::Vector{String})::Vector{String}
     l = length(xtal_list)
     pcs = [rc[:cache][:primitive] for _ ∈ 1:l]
     bcs = [rc[:cache][:bonded_xtals] for _ ∈ 1:l]
@@ -45,7 +45,7 @@ function bondNclassify(xtal_list)
 end
 
 
-function encode(xtal_list)
+function encode(xtal_list::Vector{String})::Tuple{Dict{Symbol,Int},Int}
 	element_to_int = Dict{Symbol,Int}()
 	nb_elements = 0
     max_valency = 0
@@ -70,7 +70,7 @@ function encode(xtal_list)
 end
 
 
-function read_targets(source, examples, target_symbol)
+function read_targets(source::String, examples::Vector{String}, target_symbol::Symbol)::DataFrame
     df = CSV.read(joinpath(rc[:paths][:data], source), DataFrame, delim=", ")
     select!(df, [:name, target_symbol])
     filter!(r -> "$(r.name).cif" ∈ examples, df)
@@ -78,7 +78,7 @@ function read_targets(source, examples, target_symbol)
 end
 
 
-@everywhere function node_feature_matrix(xtal, max_valency, element_to_int)
+function node_feature_matrix(xtal::Crystal, max_valency::Int, element_to_int::Dict{Symbol,Int})
     embedding_length = length(element_to_int) + max_valency
     X = zeros(Int, xtal.atoms.n, embedding_length)
     for (i, atom) in enumerate(xtal.atoms.species)
@@ -89,7 +89,7 @@ end
 end
 
 
-@everywhere function edge_vectors(graph, args)
+function edge_vectors(graph::MetaGraph, args::Dict{Symbol,Any})::Union{Tuple{Vector{Int},Vector{Int},Vector{Float64}},Tuple{Vector{Int},Vector{Int},Vector{Int},Vector{Float64}}}
     edge_count = ne(graph)
 	l = 2 * edge_count
     edg_srcs = zeros(Int, 1, l)
@@ -125,7 +125,7 @@ end
 end
 
 
-@everywhere function bond_angle_vecs(xtal)
+function bond_angle_vecs(xtal::Crystal)::Tuple{Vector{Int},Vector{Int},Vector{Int},Vector{Float64}}
     I = Int[]
     J = Int[]
     K = Int[]
@@ -149,11 +149,11 @@ end
             append!(θ, α)
         end
     end
-    return angles
+    return I, J, K, θ
 end
 
 
-@everywhere function write_data(xtal, name, element_to_int, max_valency, graphs_path, args, config=nothing)
+function write_data(xtal::Crystal, name::String, element_to_int::Dict{Symbol,Int}, max_valency::Int, graphs_path::String, args::Dict{Symbol,Any}, config::Union{Nothing,VSPNConfig}=nothing)
     X = node_feature_matrix(xtal, max_valency, element_to_int)
     X_name = chop(name, tail=4)
 	# bond graph
@@ -185,14 +185,14 @@ end
 end
 
 
-@everywhere function process_example(xtal_name, element_to_int, max_valency, bonded_xtals_cache, graphs_path, args, config=nothing)
+function process_example(xtal_name::String, element_to_int::Dict{Symbol,Int}, max_valency::Int, bonded_xtals_cache::String, graphs_path::String, args::Dict{Symbol,Any}, config::Union{Nothing,VSPNConfig}=nothing)
     @load joinpath(bonded_xtals_cache, xtal_name) obj
     xtal, _ = obj
     write_data(xtal, xtal_name, element_to_int, max_valency, graphs_path, args, config=nothing)
 end
 
 
-function process_examples(good_xtals, element_to_int, max_valency, args)
+function process_examples(good_xtals::Vector{String}, element_to_int::Dict{Symbol,Int}, max_valency::Int, args::Dict{Symbol,Any})
     l = length(good_xtals)
     els = [element_to_int for _ ∈ 1:l]
     mvs = [max_valency for _ ∈ 1:l]
@@ -200,7 +200,9 @@ function process_examples(good_xtals, element_to_int, max_valency, args)
     gps = [rc[:paths][:graphs] for _ ∈ 1:l]
     ags = [args for _ ∈ 1:l]
     if args[:vspn]
-        pmap(process_example, good_xtals, els, mvs, bxc, gps, ags, config=VSPNConfig(args[:probe], args[:forcefield]))
+        config = VSPNConfig(args[:probe], args[:forcefield])
+        cfs = [config for _ ∈ 1:l]
+        pmap(process_example, good_xtals, els, mvs, bxc, gps, ags, cfs)
     else
         pmap(process_example, good_xtals, els, mvs, bxc, gps, ags)
     end

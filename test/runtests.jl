@@ -5,7 +5,7 @@ FIGlet.render("MLMolGraph", FIGlet.availablefonts()[64])
 @testset "bonds" begin
     clear_cache()
     run_process(Dict(
-        :target => "deliverable capacity [v STP/v]",
+        :target => Symbol("deliverable capacity [v STP/v]"),
         :data => joinpath(pwd(), "data"),
         :bonds => true,
         :angles => false,
@@ -19,7 +19,7 @@ end
 @testset "angles" begin
     clear_cache()
     run_process(Dict(
-        :target => "deliverable capacity [v STP/v]",
+        :target => Symbol("deliverable capacity [v STP/v]"),
         :data => joinpath(pwd(), "data"),
         :bonds => true,
         :angles => true,
@@ -33,7 +33,7 @@ end
 @testset "vspn" begin
     clear_cache()
     run_process(Dict(
-        :target => "deliverable capacity [v STP/v]",
+        :target => Symbol("deliverable capacity [v STP/v]"),
         :data => joinpath(pwd(), "data"),
         :bonds => false,
         :angles => false,
@@ -47,7 +47,7 @@ end
 @testset "vspn + angles" begin
     clear_cache()
     run_process(Dict(
-        :target => "deliverable capacity [v STP/v]",
+        :target => Symbol("deliverable capacity [v STP/v]"),
         :data => joinpath(pwd(), "data"),
         :bonds => false,
         :angles => true,

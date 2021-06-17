@@ -3,12 +3,12 @@ function shift_coords(xtal::Crystal)::Matrix{Float64}
     return Matrix(transpose(Cart(xtal.atoms.coords, xtal.box).x .- xtal.box.f_to_c * [0.5, 0.5, 0.5]))
 end
 
-function shift_coords(coords::Matrix{Float64}, box::Box)
+function shift_coords(coords::Matrix{Float64}, box::Box)::Matrix{Float64}
     return coords .- box.f_to_c * [0.5, 0.5, 0.5]
 end
 
 
-function shift_back(coords, box)
+function shift_back(coords::Matrix{Float64}, box::Box)::Matrix{Float64}
     return coords .+ box.f_to_c * [0.5, 0.5, 0.5]
 end
 
@@ -48,6 +48,6 @@ end
 
 
 # https://mathworld.wolfram.com/Sphere-SphereIntersection.html
-function lens(r, R, d)
+function lens(r::Float64, R::Float64, d::Float64)::Float64
     π * (R + r - d)^2 * (d^2 + 2*d*r - 3*r^2 + 2*d*R + 6*r*R - 3*R^2) / 12 / d
 end

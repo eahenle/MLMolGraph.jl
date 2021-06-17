@@ -6,10 +6,13 @@ end
 VSPNConfig(probe::String, ljff::String) = VSPNConfig(Molecule(probe), LJForceField(ljff))
 
 
+import Base.show
+function show(config::VSPNConfig)
+    print("VSPN Configuration\nForcefield: $(config.forcefield.name)\nProbe: $(config.molecule.species)")
+end
 
 
-
-function collect_atoms!(graph, xtal)
+function collect_atoms!(graph::MetaGraph, xtal::Crystal)
     for i ∈ 1:xtal.atoms.n
         add_vertex!(graph, Dict(:type => :A, :species => xtal.atoms.species[i]))
     end
@@ -21,7 +24,7 @@ function collect_atoms!(graph, xtal)
 end
 
 
-function collect_vertices!(graph, vt)
+function collect_vertices!(graph::MetaGraph, vt::VoroTess)
     points = unique_voro_pts(vt)
     for point ∈ points
         add_vertex!(graph, Dict(:type => :V, :point => point))
@@ -30,13 +33,13 @@ function collect_vertices!(graph, vt)
     for i ∈ (vt.xtal.atoms.n + 1):(nv(graph)) # loop over vertex indices
         point = get_prop(graph, i, :point)
         for n ∈ point.cells # loop over indices of adjacent cells
-            add_edge!(graph, i, n, Dict(:type => :AV, :distance => pbc_distance(vt.atom_pts[:, n], point.coords, vt.box)))
+            add_edge!(graph, i, n, Dict(:type => :AV, :distance => pbc_distance(vt.atom_pts[:, n], point.coords, vt.box_params)))
         end
     end
 end
 
 
-function remove_high_E_verts!(graph, vt, config)
+function remove_high_E_verts!(graph::MetaGraph, vt::VoroTess, config::VSPNConfig)
     high_E_verts = []
     for i ∈ (vt.xtal.atoms.n + 1):nv(graph) # loop over vertex indices
         # translate probe to vertex
@@ -53,7 +56,7 @@ function remove_high_E_verts!(graph, vt, config)
 end
 
 
-function mark_radii!(graph, vt)
+function mark_radii!(graph::MetaGraph, vt::VoroTess)
     for i ∈ (vt.xtal.atoms.n + 1):nv(graph) # loop over vertex indices
         min_dist = Inf
         for n ∈ neighbors(graph, i) # loop over adjacent cell atoms
@@ -69,7 +72,7 @@ function mark_radii!(graph, vt)
 end
 
 
-function greedy_selection1!(keep_vertices, radius_order, vt, graph)
+function greedy_selection1!(keep_vertices::Vector{Int}, radius_order::Vector{Int}, vt::VoroTess, graph::MetaGraph)
     for i ∈ (vt.xtal.atoms.n .+ radius_order):nv(graph) # loop over vertices, largest radii first
         overlapping = false
         i_x = get_prop(graph, i, :point).coords
@@ -87,7 +90,7 @@ function greedy_selection1!(keep_vertices, radius_order, vt, graph)
 end
 
 
-function greedy_selection2!(keep_vertices, radius_order, vt, graph)
+function greedy_selection2!(keep_vertices::Vector{Int}, radius_order::Vector{Int}, vt::VoroTess, graph::MetaGraph)
     for i ∈ (vt.xtal.atoms.n .+ radius_order):nv(graph) # loop over vertices, largest radii first
         contained = false
         i_x = get_prop(graph, i, :point).coords
@@ -105,7 +108,7 @@ function greedy_selection2!(keep_vertices, radius_order, vt, graph)
 end
 
 
-function calculate_lenses!(graph, vt)
+function calculate_lenses!(graph::MetaGraph, vt::VoroTess)
     for i ∈ (vt.xtal.atoms.n + 1):nv(graph) # loop over remaining vertices
         i_r = get_prop(graph, i, :radius)
         i_x = get_prop(graph, i, :point).coords
@@ -121,7 +124,7 @@ function calculate_lenses!(graph, vt)
 end
 
 
-function vspn_graph(xtal, config)
+function vspn_graph(xtal::Crystal, config::VSPNConfig)::MetaGraph
     # get voronoi tesselation
     vt = voronoi_tesselation(xtal)
     # merge graphs
