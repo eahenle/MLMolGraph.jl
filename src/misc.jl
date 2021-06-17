@@ -33,18 +33,19 @@ end
 
 # calculates distance between two points in a periodic system
 ## is this correct for non-orthorhombic cells?
-function pbc_distance(pt1::Array{Float64}, pt2::Array{Float64}, box)::Float64
+function pbc_distance(pt1::Array{Float64}, pt2::Array{Float64}, box::Vector{Float64})::Float64
     dx = pt1 .- pt2
-    sz = [box.a, box.b, box.c]
     for i ∈ 1:3
-        if dx[i] > sz[i] * 0.5
-            dx[i] -= sz[i]
-        elseif dx[i] ≤ -sz[i] * 0.5
-            dx[i] += sz[i]
+        if dx[i] > box[i] * 0.5
+            dx[i] -= box[i]
+        elseif dx[i] ≤ -box[i] * 0.5
+            dx[i] += box[i]
         end
     end
     return norm(dx)
 end
+
+pbc_distance(pt1::Array{Float64}, pt2::Array{Float64}, box::Box) = pbc_distance(pt1, pt2, [box.a, box.b, box.c])
 
 
 # https://mathworld.wolfram.com/Sphere-SphereIntersection.html

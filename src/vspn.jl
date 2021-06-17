@@ -12,7 +12,7 @@ end
 
 
 function collect_atoms!(graph::MetaGraph, xtal::Crystal)
-    @debug "Collecting atoms" xtal graph
+    @debug "Collecting atoms"  
     for i ∈ 1:xtal.atoms.n
         add_vertex!(graph, Dict(:type => :A, :species => xtal.atoms.species[i]))
     end
@@ -25,7 +25,7 @@ end
 
 
 function collect_vertices!(graph::MetaGraph, vt::VoroTess)
-    @debug "Collecting Voronoi vertices" vt graph
+    @debug "Collecting Voronoi vertices"
     points = unique_voro_pts(vt)
     for point ∈ points
         add_vertex!(graph, Dict(:type => :V, :point => point))
@@ -33,15 +33,15 @@ function collect_vertices!(graph::MetaGraph, vt::VoroTess)
     # make bridge edges to neighbor atoms, annotating distance
     for i ∈ (vt.xtal.atoms.n + 1):(nv(graph)) # loop over vertex indices
         point = get_prop(graph, i, :point)
-        for n ∈ point.cells # loop over indices of adjacent cells
-            add_edge!(graph, i, n, Dict(:type => :AV, :distance => pbc_distance(vt.atom_pts[:, n], point.coords, vt.box_params)))
+        for n ∈ point.cells # loop over indices (atoms) of adjacent cells
+            add_edge!(graph, i, n, Dict(:type => :AV, :distance => pbc_distance(vt.atom_pts[n, :], point.coords, vt.box_params)))
         end
     end
 end
 
 
 function remove_high_E_verts!(graph::MetaGraph, vt::VoroTess, config::VSPNConfig)
-    @debug "Removing high-energy V nodes" config vt graph
+    @debug "Removing high-energy V nodes"
     high_E_verts = []
     for i ∈ (vt.xtal.atoms.n + 1):nv(graph) # loop over vertex indices
         # translate probe to vertex
@@ -59,7 +59,7 @@ end
 
 
 function mark_radii!(graph::MetaGraph, vt::VoroTess)
-    @debug "Marking V node radii" vt graph
+    @debug "Marking V node radii"
     for i ∈ (vt.xtal.atoms.n + 1):nv(graph) # loop over vertex indices
         min_dist = Inf
         for n ∈ neighbors(graph, i) # loop over adjacent cell atoms
@@ -76,7 +76,7 @@ end
 
 
 function greedy_selection1!(keep_vertices::Vector{Int}, radius_order::Vector{Int}, vt::VoroTess, graph::MetaGraph)
-    @debug "First round of greedy algorithm" vt graph radius_order
+    @debug "First round of greedy algorithm"
     for i ∈ (vt.xtal.atoms.n .+ radius_order):nv(graph) # loop over vertices, largest radii first
         overlapping = false
         i_x = get_prop(graph, i, :point).coords
@@ -95,7 +95,7 @@ end
 
 
 function greedy_selection2!(keep_vertices::Vector{Int}, radius_order::Vector{Int}, vt::VoroTess, graph::MetaGraph)
-    @debug "Second round of greedy algorithm" vt graph radius_order keep_vertices
+    @debug "Second round of greedy algorithm"
     for i ∈ (vt.xtal.atoms.n .+ radius_order):nv(graph) # loop over vertices, largest radii first
         contained = false
         i_x = get_prop(graph, i, :point).coords
@@ -114,7 +114,7 @@ end
 
 
 function calculate_lenses!(graph::MetaGraph, vt::VoroTess)
-    @debug "Calculating VV edge lenses" vt graph
+    @debug "Calculating VV edge lenses"
     for i ∈ (vt.xtal.atoms.n + 1):nv(graph) # loop over remaining vertices
         i_r = get_prop(graph, i, :radius)
         i_x = get_prop(graph, i, :point).coords
@@ -131,40 +131,40 @@ end
 
 
 function vspn_graph(xtal::Crystal, config::VSPNConfig)::MetaGraph
-    @debug "Getting VSPN graph" config xtal
+    @debug "Getting VSPN graph"
     # get voronoi tesselation
     vt = voronoi_tesselation(xtal)
-    @debug "Got tesselation" vt
+    @debug "Got tesselation"
     # merge graphs
     output_graph = MetaGraph()
     # atoms and bonds
     collect_atoms!(output_graph, xtal)
-    @debug "Collected atoms" output_graph
+    @debug "Collected atoms"
     # Voronoi vertices
     collect_vertices!(output_graph, vt)
-    @debug "Collected vertices" output_graph
+    @debug "Collected vertices" 
     # remove vertices (pass 1)
     remove_high_E_verts!(output_graph, vt, config)
-    @debug "Removed high-energy vertices" output_graph
+    @debug "Removed high-energy vertices" 
     # find sphere radii
     mark_radii!(output_graph, vt)
     # sort vertices by radius, descending order
     radius_order = sortperm([get_prop(output_graph, i, :radius) for i ∈ (vt.nb_atoms + 1):nv(output_graph)], rev=true)
-    @debug "Marked and sorted V node radii" output_graph radius_order
+    @debug "Marked and sorted V node radii"  
     # determine which vertices to keep
     keep_vertices = falses(length(radius_order))
     # tag vertices for keeping (pass 2)
     greedy_selection1!(keep_vertices, radius_order, vt, output_graph)
-    @debug "Did first greedy selection" keep_vertices
+    @debug "Did first greedy selection" 
     # tag vertices for keeping (pass 3)
     greedy_selection2!(keep_vertices, radius_order, vt, output_graph)
-    @debug "Did second greedy selection" keep_vertices
+    @debug "Did second greedy selection" 
     # remove vertices (passes 2 & 3)
     rem_vertices!(output_graph, ((vt.nb_atoms + 1):nv(output_graph))[.!keep_vertices])
-    @debug "Filtered V nodes" output_graph
+    @debug "Filtered V nodes" 
     # make VV edges and label by lens volume
     calculate_lenses!(output_graph, vt)
-    @debug "Calculated lenses" output_graph
+    @debug "Calculated lenses" 
     return output_graph
 end
 

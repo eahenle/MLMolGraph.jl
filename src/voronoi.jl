@@ -8,7 +8,7 @@ end
 
 
 struct VoroPoint
-    coords::Matrix{Float64}
+    coords::Vector{Float64}
     cells::Vector{Int}
 end
 
@@ -83,11 +83,14 @@ voronoi_tesselation(xtal::Crystal) = voronoi_tesselation(xtal, shift_coords(xtal
 
 
 function unique_voro_pts(vt::VoroTess)::Vector{VoroPoint}
-    @debug "Finding unique polytope vertices" vt.cells
     points = VoroPoint[]
-    cells = Array{VoroCell}(undef, length(vt.cells))
+    cells = Dict{Int,VoroCell}()
     # loop over vt.cells
     for (c, cell) ∈ enumerate(vt.cells)
+        # some cells have no entry in the neighbor list of the tesselation; skip them
+        if c ∉ keys(vt.n_dict)
+            continue
+        end
         # each entry in vt.cells is a matrix of point coordinates, but transposed from what's best
         mat = cell'
         # add the unique columns from the matrix to the cell struct
@@ -101,27 +104,24 @@ function unique_voro_pts(vt::VoroTess)::Vector{VoroPoint}
             end
         end
         # pull the list of neighboring cell indices and make the cell struct
-        @debug "Making VoroCell" c 
-        @debug vt.n_dict
-        @debug cell[unique_col_ids,:]
         cells[c] = VoroCell(cell[unique_col_ids,:], vt.n_dict[c])
     end
-    df = DataFrame(:cell_index => Int[], :pt_coords => Matrix{Float64}[])
+    # build a DataFrame w/ each row a single vertex of a single cell (merge them later)
+    df = DataFrame(:cell_index => Int[], :pt_coords => Vector{Float64}[])
     # loop over cells
-    for (c, cell) ∈ enumerate(cells)
+    for (c, cell) ∈ cells
         # loop over points
-        for point ∈ cell.vertices
+        for i ∈ 1:size(cell.vertices,1)
+            point = cell.vertices[i,:]
             # add point coords, cell index to row of df
-            append!(df, DataFrame(:cell_index => c, :pt_coords => point))
+            append!(df, DataFrame(:cell_index => [c], :pt_coords => [point]))
         end
     end
     # group df by coords
     gdf = groupby(df, :pt_coords)
     # combine grouped rows by merging cell indices into list
-    cdf = combine(gdf, :cell_index => unique)
-    # translate combined rows into VoroPoints
-    for row ∈ rows(cdf)
-        append!(points, VoroPoint(row.pt_coords, row.cell_index_unique))
+    for group ∈ gdf
+        append!(points, [VoroPoint(group.pt_coords[1], unique(group.cell_index))])
     end
     return points
 end
