@@ -1,6 +1,7 @@
-function setup_cache()
-    rc[:cache][:primitive] = joinpath(rc[:paths][:data], "cache", "primitive")
-    rc[:cache][:bonded_xtals] = joinpath(rc[:paths][:data], "cache", "bonded_xtals")
+function setup_cache(cache)
+    rc[:paths][:cache] = cache
+    rc[:cache][:primitive] = joinpath(cache, "primitive")
+    rc[:cache][:bonded_xtals] = joinpath(cache, "bonded_xtals")
     for dir ∈ rc[:cache]
         if !isdirpath(dir[2]) 
             mkpath(dir[2])
@@ -11,15 +12,15 @@ end
 
 function clear_cache()
     try
-        rm(joinpath(rc[:paths][:data], "cache"), recursive=true)
+        rm(rc[:paths][:cache], recursive=true)
     catch
     end
-    setup_cache()
+    setup_cache(rc[:paths][:cache])
 end
 
 
 function cached(f::Function, cachefile::String)
-    cachefile = joinpath(rc[:paths][:data], "cache", cachefile)
+    cachefile = joinpath(rc[:paths][:cache], cachefile)
     if isfile(cachefile)
         @load cachefile obj
     else

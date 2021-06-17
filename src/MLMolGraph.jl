@@ -6,16 +6,16 @@ using CSV, DataFrames, JLD2, LightGraphs, MetaGraphs, NPZ, Reexport
 @reexport using PorousMaterials # for user access to API
 using PorousMaterials # for distributed tasks
 
+include("voronoi.jl")
+include("vspn.jl")
 include("cache_tools.jl")
 include("processing.jl")
 include("run_process.jl")
 include("misc.jl")
-include("voronoi.jl")
-include("vspn.jl")
 
 function __init__()
     rc[:cache] = Dict()
-    setup_cache()
+    setup_cache(joinpath(pwd(), "data", "cache"))
     rc[:paths][:graphs] = joinpath(rc[:paths][:data], "Graphs")
     if !isdirpath(rc[:paths][:graphs])
         mkpath(rc[:paths][:graphs])

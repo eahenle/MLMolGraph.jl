@@ -30,9 +30,14 @@ argparser = ArgParseSettings(
         help = "the molecule to use as the probe in VSPN"
         arg_type = String
         default = ""
-    "--clear_cache", "-c"
+    "--clear_cache", "-x"
         help = "delete the cache"
         action = :store_true
+    "--cache", "-c"
+        help = "cache location"
+        arg_type = String
+        default = joinpath(pwd(), "data", "cache")
+
 end
 args = parse_args(argparser, as_symbols=true)
 
@@ -40,7 +45,7 @@ using CSV, FIGlet, MLMolGraph, NPZ
 
 FIGlet.render("MLMolGraph", FIGlet.availablefonts()[64])
 @info "Loading data from $(args[:data])"
-@info "Cache at $(rc[:paths][:data])/cache"
+@info "Cache at $(args[:cache])"
 @info "Target: $(args[:target])"
 
 set_paths(args[:data])

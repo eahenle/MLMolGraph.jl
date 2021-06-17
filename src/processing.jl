@@ -168,11 +168,11 @@ function write_data(xtal::Crystal, name::String, element_to_int::Dict{Symbol,Int
     if args[:vspn]
         vspn = vspn_graph(xtal, config)
         A, B, T, W = edge_vectors(vspn, args)
-        npzwrite(joinpath(rc[:paths][:graphs], X_name * "_vspn_node_features.npy"), X)
-        npzwrite(joinpath(rc[:paths][:graphs], X_name * "_vspn_edges_src.npy"), A)
-        npzwrite(joinpath(rc[:paths][:graphs], X_name * "_vspn_edges_dst.npy"), B)
-        npzwrite(joinpath(rc[:paths][:graphs], X_name * "_vspn_edges_types.npy"), T)
-        npzwrite(joinpath(rc[:paths][:graphs], X_name * "_vspn_edges_weights.npy"), W)
+        npzwrite(joinpath(graphs_path, X_name * "_vspn_node_features.npy"), X)
+        npzwrite(joinpath(graphs_path, X_name * "_vspn_edges_src.npy"), A)
+        npzwrite(joinpath(graphs_path, X_name * "_vspn_edges_dst.npy"), B)
+        npzwrite(joinpath(graphs_path, X_name * "_vspn_edges_types.npy"), T)
+        npzwrite(joinpath(graphs_path, X_name * "_vspn_edges_weights.npy"), W)
     end
 	# bond angles
     if args[:angles]
