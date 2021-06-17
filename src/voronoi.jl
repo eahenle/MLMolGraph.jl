@@ -14,7 +14,7 @@ end
 
 
 struct VoroCell
-    vertices::Vector{Int}
+    vertices::Matrix{Float64}
     neighbors::Vector{Int}
 end
 
@@ -38,10 +38,10 @@ function show(vt::VoroTess)
     print("$(size(vt.atom_pts, 2)) atom points")
     print("Neighbors: $(vt.n_dict)")
 end
+display(vt::VoroTess) = show(vt)
 
 
 function neighbor_dict(A::Vector{Int}, B::Vector{Int}, n::Int)::Dict{Int,Vector{Int}}
-    @debug "Building neighbor dictionary" n A B
     n_dict = Dict()
     for k ∈ 1:n
         i = A[k]
@@ -60,24 +60,22 @@ function neighbor_dict(A::Vector{Int}, B::Vector{Int}, n::Int)::Dict{Int,Vector{
     for (key, value) ∈ n_dict
         unique!(n_dict[key])
     end
-    @debug "Neighbor dictionary" n_dict
     return n_dict
 end
 
 
 # calculates the Voronoi tesselation
 function voronoi_tesselation(xtal::Crystal, points::Matrix{Float64}, box_params::Array{Float64,1})::VoroTess
-    @debug "Getting tesselation" xtal points box_params
     freud = rc[:freud]
     box = freud.box.Box.from_box(box_params)
     voro = freud.locality.Voronoi()
     voro.compute((box, points))
     cells = voro.polytopes
-    A = [i for i ∈ voro.nlist.query_point_indices]
-    B = [i for i ∈ voro.nlist.point_indices]
+    # correct for Python indexing
+    A = [i+1 for i ∈ voro.nlist.query_point_indices]
+    B = [i+1 for i ∈ voro.nlist.point_indices]
     n = voro.nlist.num_points
     n_dict = neighbor_dict(A, B, n)
-    @debug "Building VoroTess" xtal cells box_params points n_dict
     return VoroTess(xtal, cells, box_params, points, n_dict)
 end
 
@@ -85,17 +83,30 @@ voronoi_tesselation(xtal::Crystal) = voronoi_tesselation(xtal, shift_coords(xtal
 
 
 function unique_voro_pts(vt::VoroTess)::Vector{VoroPoint}
-    @debug "Finding unique polytope vertices" vt
+    @debug "Finding unique polytope vertices" vt.cells
     points = VoroPoint[]
     cells = Array{VoroCell}(undef, length(vt.cells))
     # loop over vt.cells
     for (c, cell) ∈ enumerate(vt.cells)
-        # each entry in vt.cells is a list of points
-        # add the unique points from the list to the cell struct
-        # add the list of neighboring cells to the cell struct
-        cells[c] = VoroCell(unique(cell), vt.n_dict[c])
+        # each entry in vt.cells is a matrix of point coordinates, but transposed from what's best
+        mat = cell'
+        # add the unique columns from the matrix to the cell struct
+        unique_col_ids = Int[]
+        unique_cols = Vector{Float64}[]
+        for i ∈ 1:size(mat,2) # loop over columns
+            col = mat[:,i]
+            if col ∉ unique_cols
+                append!(unique_cols, [col])
+                append!(unique_col_ids, i)
+            end
+        end
+        # pull the list of neighboring cell indices and make the cell struct
+        @debug "Making VoroCell" c 
+        @debug vt.n_dict
+        @debug cell[unique_col_ids,:]
+        cells[c] = VoroCell(cell[unique_col_ids,:], vt.n_dict[c])
     end
-    df = DataFrame(:cell_index => [], :pt_coords => [])
+    df = DataFrame(:cell_index => Int[], :pt_coords => Matrix{Float64}[])
     # loop over cells
     for (c, cell) ∈ enumerate(cells)
         # loop over points

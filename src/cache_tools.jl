@@ -22,7 +22,6 @@ end
 function cached(f::Function, cachefile::String)
     cachefile = joinpath(rc[:paths][:cache], cachefile)
     if isfile(cachefile)
-        @debug "Loading cache" cachefile
         @load cachefile obj
     else
         obj = f()
