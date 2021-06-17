@@ -89,7 +89,7 @@ end
 end
 
 
-@everywhere function bond_edge_vectors(graph)
+@everywhere function edge_vectors(graph, args)
     edge_count = ne(graph)
 	l = 2 * edge_count
     edg_srcs = zeros(Int, 1, l)
@@ -100,7 +100,28 @@ end
         edg_dsts[i] = edg_srcs[i + edge_count] = edge.dst - 1
         edg_lens[i] = edg_lens[i + edge_count] = get_prop(graph, edge, :distance)
     end
-    return edg_srcs, edg_dsts, edg_lens
+    if args[:bonds]
+        return edg_srcs, edg_dsts, edg_lens
+    elseif args[:vspn]
+        edg_type = zeros(Int, 1, l)
+        edg_wght = zeros(Float64, 1, l)
+        for (i, edge) in enumerate(edges(graph))
+            s = src(edge)
+            d = dst(edge)
+            type = get_prop(graph, s, d, :type)
+            if type == :AA
+                edg_type[i] = edg_type[i + edge_count] = 1
+                edg_wght[i] = edg_wght[i + edge_count] = get_prop(graph, s, d, :distance)
+            elseif type == :AV
+                edg_type[i] = edg_type[i + edge_count] = 2
+                edg_wght[i] = edg_wght[i + edge_count] = get_prop(graph, s, d, :distance)
+            else # type == :VV
+                edg_type[i] = edg_type[i + edge_count] = 3
+                edg_wght[i] = edg_wght[i + edge_count] = get_prop(graph, s, d, :lens)
+            end
+        end
+        return edg_srcs, edg_dsts, edg_type, edg_wght
+    end
 end
 
 
@@ -132,28 +153,29 @@ end
 end
 
 
-@everywhere function write_data(xtal, name, element_to_int, max_valency, graphs_path, settings)
+@everywhere function write_data(xtal, name, element_to_int, max_valency, graphs_path, args, config=nothing)
     X = node_feature_matrix(xtal, max_valency, element_to_int)
     X_name = chop(name, tail=4)
 	# bond graph
-    if settings[:bonds]
-        A, B, D = bond_edge_vectors(xtal.bonds)
+    if args[:bonds]
+        A, B, D = edge_vectors(xtal.bonds, args)
         npzwrite(joinpath(graphs_path, X_name * "_node_features.npy"), X)
         npzwrite(joinpath(graphs_path, X_name * "_edges_src.npy"), A)
         npzwrite(joinpath(graphs_path, X_name * "_edges_dst.npy"), B)
         npzwrite(joinpath(graphs_path, X_name * "_euc.npy"), D)
     end
     # VSPN graph
-    if settings[:vspn]
-        A, B, T, W = vspn_edge_vectors(xtal.bonds, settings[:config])
-        npzwrite(joinpath(rc[:paths][:graphs], X_name * "_node_features.npy"), X)
-        npzwrite(joinpath(rc[:paths][:graphs], X_name * "_edges_src.npy"), A)
-        npzwrite(joinpath(rc[:paths][:graphs], X_name * "_edges_dst.npy"), B)
-        npzwrite(joinpath(rc[:paths][:graphs], X_name * "_edges_types.npy"), T)
-        npzwrite(joinpath(rc[:paths][:graphs], X_name * "_edges_weights.npy"), W)
+    if args[:vspn]
+        vspn = vspn_graph(xtal, config)
+        A, B, T, W = edge_vectors(vspn, args)
+        npzwrite(joinpath(rc[:paths][:graphs], X_name * "_vspn_node_features.npy"), X)
+        npzwrite(joinpath(rc[:paths][:graphs], X_name * "_vspn_edges_src.npy"), A)
+        npzwrite(joinpath(rc[:paths][:graphs], X_name * "_vspn_edges_dst.npy"), B)
+        npzwrite(joinpath(rc[:paths][:graphs], X_name * "_vspn_edges_types.npy"), T)
+        npzwrite(joinpath(rc[:paths][:graphs], X_name * "_vspn_edges_weights.npy"), W)
     end
 	# bond angles
-    if settings[:angles]
+    if args[:angles]
         I, J, K, θ = bond_angle_vecs(xtal)
         npzwrite(joinpath(graphs_path, X_name * "_angles_I.npy"), I)
         npzwrite(joinpath(graphs_path, X_name * "_angles_J.npy"), J)
@@ -163,19 +185,23 @@ end
 end
 
 
-@everywhere function process_example(xtal_name, element_to_int, max_valency, bonded_xtals_cache, graphs_path, settings)
+@everywhere function process_example(xtal_name, element_to_int, max_valency, bonded_xtals_cache, graphs_path, args, config=nothing)
     @load joinpath(bonded_xtals_cache, xtal_name) obj
     xtal, _ = obj
-    write_data(xtal, xtal_name, element_to_int, max_valency, graphs_path, settings)
+    write_data(xtal, xtal_name, element_to_int, max_valency, graphs_path, args, config=nothing)
 end
 
 
-function process_examples(good_xtals, element_to_int, max_valency, settings)
+function process_examples(good_xtals, element_to_int, max_valency, args)
     l = length(good_xtals)
     els = [element_to_int for _ ∈ 1:l]
     mvs = [max_valency for _ ∈ 1:l]
     bxc = [rc[:cache][:bonded_xtals] for _ ∈ 1:l]
     gps = [rc[:paths][:graphs] for _ ∈ 1:l]
-    sts = [settings for _ ∈ 1:l]
-    pmap(process_example, good_xtals, els, mvs, bxc, gps)
+    ags = [args for _ ∈ 1:l]
+    if args[:vspn]
+        pmap(process_example, good_xtals, els, mvs, bxc, gps, ags, config=VSPNConfig(args[:probe], args[:forcefield]))
+    else
+        pmap(process_example, good_xtals, els, mvs, bxc, gps, ags)
+    end
 end
