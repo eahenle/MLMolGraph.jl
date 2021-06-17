@@ -1,6 +1,6 @@
 struct VoroTess
     xtal::Crystal
-    cells::Vector{Vector{Vector{Float64}}}
+    cells::Vector{Matrix{Float64}}
     box_params::Vector{Float64}
     atom_pts::Matrix{Float64}
     n_dict::Dict{Int,Int}
@@ -19,9 +19,11 @@ struct VoroCell
 end
 
 
-function neighbor_dict(n_list::Vector{Tuple{Int,Int}})::Dict{Int,Int}
+function neighbor_dict(A::Vector{Int}, B::Vector{Int}, n::Int)::Dict{Int,Vector{Int}}
     n_dict = Dict()
-    for (i, j) ∈ n_list
+    for k ∈ 1:n
+        i = A[k]
+        j = B[k]
         if i ∈ keys(n_dict)
             append!(n_dict[i], j)
         else
@@ -41,18 +43,20 @@ end
 
 
 # calculates the Voronoi tesselation
-function voronoi_tesselation(points::Matrix{Float64}, box_params::Array{Float64,1})::VoroTess
+function voronoi_tesselation(xtal::Crystal, points::Matrix{Float64}, box_params::Array{Float64,1})::VoroTess
     freud = rc[:freud]
     box = freud.box.Box.from_box(box_params)
     voro = freud.locality.Voronoi()
     voro.compute((box, points))
     cells = voro.polytopes
-    @info "FOO" voro voro.nlist voro.nlist.point_indices
-    n_dict = neighbor_dict(voro.nlist.point_indices)
+    A = [i for i ∈ voro.nlist.query_point_indices]
+    B = [i for i ∈ voro.nlist.point_indices]
+    n = voro.nlist.num_points
+    n_dict = neighbor_dict(A, B, n)
     return VoroTess(xtal, cells, box, points, n_dict)
 end
 
-voronoi_tesselation(xtal::Crystal) = voronoi_tesselation(shift_coords(xtal), convert_box(xtal.box))
+voronoi_tesselation(xtal::Crystal) = voronoi_tesselation(xtal, shift_coords(xtal), convert_box(xtal.box))
 
 
 function unique_voro_pts(vt::VoroTess)::Vector{VoroPoint}

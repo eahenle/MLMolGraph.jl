@@ -1,7 +1,7 @@
 module MLMolGraph
 using Distributed
 
-using CSV, DataFrames, FIGlet, JLD2, LightGraphs, MetaGraphs, NPZ, Reexport
+using CSV, DataFrames, FIGlet, JLD2, LightGraphs, LinearAlgebra, MetaGraphs, NPZ, PyCall, Reexport
 
 @reexport using PorousMaterials
 
@@ -19,6 +19,7 @@ function __init__()
     if !isdirpath(rc[:paths][:graphs])
         mkpath(rc[:paths][:graphs])
     end
+    rc[:freud] = pyimport("freud")
 end
 
 export cached, xtals2primitive, bondNclassify, encode, read_targets, process_examples, clear_cache, run_process, vspn_graph

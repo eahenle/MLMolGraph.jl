@@ -21,3 +21,7 @@ Generate ML inputs using 32 cores for a model using VSPN with methane and UFF:
 ```
 julia --project -p 32 process_crystals.jl --vspn -p CH4 -f UFF
 ```
+
+**Dependencies**
+
+Requires `freud` v2.5.1 (other versions' compatibility unknown)

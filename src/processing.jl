@@ -153,7 +153,7 @@ function bond_angle_vecs(xtal::Crystal)::Tuple{Vector{Int},Vector{Int},Vector{In
 end
 
 
-function write_data(xtal::Crystal, name::String, element_to_int::Dict{Symbol,Int}, max_valency::Int, graphs_path::String, args::Dict{Symbol,Any}; config::Union{Nothing,VSPNConfig}=nothing)
+function write_data(xtal::Crystal, name::String, element_to_int::Dict{Symbol,Int}, max_valency::Int, graphs_path::String, args::Dict{Symbol,Any}, config::Union{Nothing,VSPNConfig}=nothing)
     X = node_feature_matrix(xtal, max_valency, element_to_int)
     X_name = chop(name, tail=4)
 	# bond graph
@@ -188,7 +188,7 @@ end
 function process_example(xtal_name::String, element_to_int::Dict{Symbol,Int}, max_valency::Int, bonded_xtals_cache::String, graphs_path::String, args::Dict{Symbol,Any}, config::Union{Nothing,VSPNConfig}=nothing)
     @load joinpath(bonded_xtals_cache, xtal_name) obj
     xtal, _ = obj
-    write_data(xtal, xtal_name, element_to_int, max_valency, graphs_path, args, config=nothing)
+    write_data(xtal, xtal_name, element_to_int, max_valency, graphs_path, args, config)
 end
 
 
