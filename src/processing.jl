@@ -78,7 +78,7 @@ function read_targets(source, examples, target_symbol)
 end
 
 
-function node_feature_matrix(xtal, max_valency, element_to_int)
+@everywhere function node_feature_matrix(xtal, max_valency, element_to_int)
     embedding_length = length(element_to_int) + max_valency
     X = zeros(Int, xtal.atoms.n, embedding_length)
     for (i, atom) in enumerate(xtal.atoms.species)
@@ -89,7 +89,7 @@ function node_feature_matrix(xtal, max_valency, element_to_int)
 end
 
 
-function edge_vectors(graph)
+@everywhere function bond_edge_vectors(graph)
     edge_count = ne(graph)
 	l = 2 * edge_count
     edg_srcs = zeros(Int, 1, l)
@@ -104,7 +104,7 @@ function edge_vectors(graph)
 end
 
 
-function bond_angle_vecs(xtal)
+@everywhere function bond_angle_vecs(xtal)
     I = Int[]
     J = Int[]
     K = Int[]
@@ -132,36 +132,50 @@ function bond_angle_vecs(xtal)
 end
 
 
-@everywhere function write_data(xtal, name, element_to_int, max_valency, graphs_path)
+@everywhere function write_data(xtal, name, element_to_int, max_valency, graphs_path, settings)
     X = node_feature_matrix(xtal, max_valency, element_to_int)
     X_name = chop(name, tail=4)
 	# bond graph
-	A, B, D = edge_vectors(xtal.bonds)
-    npzwrite(joinpath(graphs_path, X_name * "_node_features.npy"), X)
-    npzwrite(joinpath(graphs_path, X_name * "_edges_src.npy"), A)
-    npzwrite(joinpath(graphs_path, X_name * "_edges_dst.npy"), B)
-    npzwrite(joinpath(graphs_path, X_name * "_euc.npy"), D)
+    if settings[:bonds]
+        A, B, D = bond_edge_vectors(xtal.bonds)
+        npzwrite(joinpath(graphs_path, X_name * "_node_features.npy"), X)
+        npzwrite(joinpath(graphs_path, X_name * "_edges_src.npy"), A)
+        npzwrite(joinpath(graphs_path, X_name * "_edges_dst.npy"), B)
+        npzwrite(joinpath(graphs_path, X_name * "_euc.npy"), D)
+    end
+    # VSPN graph
+    if settings[:vspn]
+        A, B, T, W = vspn_edge_vectors(xtal.bonds, settings[:config])
+        npzwrite(joinpath(rc[:paths][:graphs], X_name * "_node_features.npy"), X)
+        npzwrite(joinpath(rc[:paths][:graphs], X_name * "_edges_src.npy"), A)
+        npzwrite(joinpath(rc[:paths][:graphs], X_name * "_edges_dst.npy"), B)
+        npzwrite(joinpath(rc[:paths][:graphs], X_name * "_edges_types.npy"), T)
+        npzwrite(joinpath(rc[:paths][:graphs], X_name * "_edges_weights.npy"), W)
+    end
 	# bond angles
-    I, J, K, θ = bond_angle_vecs(xtal)
-    npzwrite(joinpath(graphs_path, X_name * "_angles_I.npy"), I)
-    npzwrite(joinpath(graphs_path, X_name * "_angles_J.npy"), J)
-    npzwrite(joinpath(graphs_path, X_name * "_angles_K.npy"), K)
-    npzwrite(joinpath(graphs_path, X_name * "_angles_theta.npy"), θ)
+    if settings[:angles]
+        I, J, K, θ = bond_angle_vecs(xtal)
+        npzwrite(joinpath(graphs_path, X_name * "_angles_I.npy"), I)
+        npzwrite(joinpath(graphs_path, X_name * "_angles_J.npy"), J)
+        npzwrite(joinpath(graphs_path, X_name * "_angles_K.npy"), K)
+        npzwrite(joinpath(graphs_path, X_name * "_angles_theta.npy"), θ)
+    end
 end
 
 
-@everywhere function process_example(xtal_name, element_to_int, max_valency, bonded_xtals_cache, graphs_path)
+@everywhere function process_example(xtal_name, element_to_int, max_valency, bonded_xtals_cache, graphs_path, settings)
     @load joinpath(bonded_xtals_cache, xtal_name) obj
     xtal, _ = obj
-    write_data(xtal, xtal_name, element_to_int, max_valency, graphs_path)
+    write_data(xtal, xtal_name, element_to_int, max_valency, graphs_path, settings)
 end
 
 
-function process_examples(good_xtals, element_to_int, max_valency)
+function process_examples(good_xtals, element_to_int, max_valency, settings)
     l = length(good_xtals)
     els = [element_to_int for _ ∈ 1:l]
     mvs = [max_valency for _ ∈ 1:l]
     bxc = [rc[:cache][:bonded_xtals] for _ ∈ 1:l]
     gps = [rc[:paths][:graphs] for _ ∈ 1:l]
+    sts = [settings for _ ∈ 1:l]
     pmap(process_example, good_xtals, els, mvs, bxc, gps)
 end

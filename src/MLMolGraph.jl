@@ -9,6 +9,9 @@ using Distributed
 include("cache_tools.jl")
 include("processing.jl")
 include("run_process.jl")
+include("misc.jl")
+include("voronoi.jl")
+include("vspn.jl")
 
 function __init__()
     rc[:cache] = Dict()
@@ -19,6 +22,6 @@ function __init__()
     end
 end
 
-export cached, xtals2primitive, bondNclassify, encode, read_targets, process_examples, clear_cache, run_process
+export cached, xtals2primitive, bondNclassify, encode, read_targets, process_examples, clear_cache, run_process, vspn_graph
 
 end
