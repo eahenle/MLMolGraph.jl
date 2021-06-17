@@ -3,6 +3,12 @@
 Converts inputs at `rc[:data][:crystals]` into ML model data for `target` at `rc[:data]` and `rc[:data][:graphs]`
 """
 function run_process(args)
+    # check args
+    valid, msg = validate_args(args)
+    if !valid
+        @error(msg)
+    end
+
     # get list of xtals
     xtal_list = cached("xtal_list.jld2") do
         readdir(rc[:paths][:crystals])

@@ -1,10 +1,9 @@
 module MLMolGraph
 using Distributed
 
-using CSV, DataFrames, JLD2, LightGraphs, MetaGraphs, NPZ, Reexport
+using CSV, DataFrames, FIGlet, JLD2, LightGraphs, MetaGraphs, NPZ, Reexport
 
-@reexport using PorousMaterials # for user access to API
-using PorousMaterials # for distributed tasks
+@reexport using PorousMaterials
 
 include("voronoi.jl")
 include("vspn.jl")

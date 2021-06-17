@@ -1,3 +1,7 @@
 data/*
-Graphs/*
+test/data/Graphs/*
 Manifest.toml
+test/data/*
+test/data/cache/*
+test/*.csv
+test/*.npy

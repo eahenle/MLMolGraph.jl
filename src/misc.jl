@@ -51,3 +51,23 @@ end
 function lens(r::Float64, R::Float64, d::Float64)::Float64
     π * (R + r - d)^2 * (d^2 + 2*d*r - 3*r^2 + 2*d*R + 6*r*R - 3*R^2) / 12 / d
 end
+
+
+function validate_args(args::Dict{Symbol,Any})::Tuple{Bool,String}
+    if !ispath(args[:data])
+        return false, "Invalid data path"
+    elseif args[:angles] && !args[:bonds]
+        return false, "Must specify bonds when requesting angles"
+    elseif args[:vspn] && (args[:forcefield] == "" || args[:probe] == "")
+        return false, "Must specify probe and forcefield for VSPN"
+    elseif !ispath(args[:cache])
+        return false, "Invalid cache path"
+    else
+        return true, ""
+    end
+end
+
+
+function banner()
+    FIGlet.render("MLMolGraph", FIGlet.availablefonts()[64])
+end

@@ -1,11 +1,11 @@
 function xtals2primitive(xtal_list::Vector{String})
-    xtal_paths = [joinpath(rc[:cache][:primitive], xtal) for xtal ∈ xtal_list]
-    @sync @distributed for xtal_file ∈ xtal_paths
-        cached(xtal_file) do 
+    @sync @distributed for xtal_file ∈ xtal_list
+        cached(joinpath(rc[:cache][:primitive], xtal_file)) do 
             try
                 xtal = Crystal(xtal_file, remove_duplicates=true)
                 return primitive_cell(xtal)
-            catch
+            catch exception
+                error(exception)
                 return Crystal("bad input", unit_cube(), 
                     Atoms([:foo], Frac([0.;0.;0.])), 
                     Charges{Frac}(0))
@@ -92,9 +92,9 @@ end
 function edge_vectors(graph::MetaGraph, args::Dict{Symbol,Any})::Union{Tuple{Vector{Int},Vector{Int},Vector{Float64}},Tuple{Vector{Int},Vector{Int},Vector{Int},Vector{Float64}}}
     edge_count = ne(graph)
 	l = 2 * edge_count
-    edg_srcs = zeros(Int, 1, l)
-    edg_dsts = zeros(Int, 1, l)
-    edg_lens = zeros(Float64, 1, l)
+    edg_srcs = zeros(Int, l)
+    edg_dsts = zeros(Int, l)
+    edg_lens = zeros(Float64, l)
     for (i, edge) in enumerate(edges(graph))
         edg_srcs[i] = edg_dsts[i + edge_count] = edge.src - 1 # python numbering
         edg_dsts[i] = edg_srcs[i + edge_count] = edge.dst - 1
@@ -103,8 +103,8 @@ function edge_vectors(graph::MetaGraph, args::Dict{Symbol,Any})::Union{Tuple{Vec
     if args[:bonds]
         return edg_srcs, edg_dsts, edg_lens
     elseif args[:vspn]
-        edg_type = zeros(Int, 1, l)
-        edg_wght = zeros(Float64, 1, l)
+        edg_type = zeros(Int, l)
+        edg_wght = zeros(Float64, l)
         for (i, edge) in enumerate(edges(graph))
             s = src(edge)
             d = dst(edge)
@@ -153,7 +153,7 @@ function bond_angle_vecs(xtal::Crystal)::Tuple{Vector{Int},Vector{Int},Vector{In
 end
 
 
-function write_data(xtal::Crystal, name::String, element_to_int::Dict{Symbol,Int}, max_valency::Int, graphs_path::String, args::Dict{Symbol,Any}, config::Union{Nothing,VSPNConfig}=nothing)
+function write_data(xtal::Crystal, name::String, element_to_int::Dict{Symbol,Int}, max_valency::Int, graphs_path::String, args::Dict{Symbol,Any}; config::Union{Nothing,VSPNConfig}=nothing)
     X = node_feature_matrix(xtal, max_valency, element_to_int)
     X_name = chop(name, tail=4)
 	# bond graph
