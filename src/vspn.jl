@@ -6,13 +6,13 @@ end
 VSPNConfig(probe::String, ljff::String) = VSPNConfig(Molecule(probe), LJForceField(ljff))
 
 
-import Base.show
 function show(config::VSPNConfig)
     print("VSPN Configuration\nForcefield: $(config.forcefield.name)\nProbe: $(config.molecule.species)")
 end
 
 
 function collect_atoms!(graph::MetaGraph, xtal::Crystal)
+    @debug "Collecting atoms" xtal graph
     for i ∈ 1:xtal.atoms.n
         add_vertex!(graph, Dict(:type => :A, :species => xtal.atoms.species[i]))
     end
@@ -25,6 +25,7 @@ end
 
 
 function collect_vertices!(graph::MetaGraph, vt::VoroTess)
+    @debug "Collecting Voronoi vertices" vt graph
     points = unique_voro_pts(vt)
     for point ∈ points
         add_vertex!(graph, Dict(:type => :V, :point => point))
@@ -40,6 +41,7 @@ end
 
 
 function remove_high_E_verts!(graph::MetaGraph, vt::VoroTess, config::VSPNConfig)
+    @debug "Removing high-energy V nodes" config vt graph
     high_E_verts = []
     for i ∈ (vt.xtal.atoms.n + 1):nv(graph) # loop over vertex indices
         # translate probe to vertex
@@ -57,6 +59,7 @@ end
 
 
 function mark_radii!(graph::MetaGraph, vt::VoroTess)
+    @debug "Marking V node radii" vt graph
     for i ∈ (vt.xtal.atoms.n + 1):nv(graph) # loop over vertex indices
         min_dist = Inf
         for n ∈ neighbors(graph, i) # loop over adjacent cell atoms
@@ -73,6 +76,7 @@ end
 
 
 function greedy_selection1!(keep_vertices::Vector{Int}, radius_order::Vector{Int}, vt::VoroTess, graph::MetaGraph)
+    @debug "First round of greedy algorithm" vt graph radius_order
     for i ∈ (vt.xtal.atoms.n .+ radius_order):nv(graph) # loop over vertices, largest radii first
         overlapping = false
         i_x = get_prop(graph, i, :point).coords
@@ -91,6 +95,7 @@ end
 
 
 function greedy_selection2!(keep_vertices::Vector{Int}, radius_order::Vector{Int}, vt::VoroTess, graph::MetaGraph)
+    @debug "Second round of greedy algorithm" vt graph radius_order keep_vertices
     for i ∈ (vt.xtal.atoms.n .+ radius_order):nv(graph) # loop over vertices, largest radii first
         contained = false
         i_x = get_prop(graph, i, :point).coords
@@ -109,6 +114,7 @@ end
 
 
 function calculate_lenses!(graph::MetaGraph, vt::VoroTess)
+    @debug "Calculating VV edge lenses" vt graph
     for i ∈ (vt.xtal.atoms.n + 1):nv(graph) # loop over remaining vertices
         i_r = get_prop(graph, i, :radius)
         i_x = get_prop(graph, i, :point).coords
@@ -125,30 +131,40 @@ end
 
 
 function vspn_graph(xtal::Crystal, config::VSPNConfig)::MetaGraph
+    @debug "Getting VSPN graph" config xtal
     # get voronoi tesselation
     vt = voronoi_tesselation(xtal)
+    @debug "Got tesselation" vt
     # merge graphs
     output_graph = MetaGraph()
     # atoms and bonds
     collect_atoms!(output_graph, xtal)
+    @debug "Collected atoms" output_graph
     # Voronoi vertices
     collect_vertices!(output_graph, vt)
+    @debug "Collected vertices" output_graph
     # remove vertices (pass 1)
     remove_high_E_verts!(output_graph, vt, config)
+    @debug "Removed high-energy vertices" output_graph
     # find sphere radii
     mark_radii!(output_graph, vt)
     # sort vertices by radius, descending order
     radius_order = sortperm([get_prop(output_graph, i, :radius) for i ∈ (vt.nb_atoms + 1):nv(output_graph)], rev=true)
+    @debug "Marked and sorted V node radii" output_graph radius_order
     # determine which vertices to keep
     keep_vertices = falses(length(radius_order))
     # tag vertices for keeping (pass 2)
     greedy_selection1!(keep_vertices, radius_order, vt, output_graph)
+    @debug "Did first greedy selection" keep_vertices
     # tag vertices for keeping (pass 3)
     greedy_selection2!(keep_vertices, radius_order, vt, output_graph)
+    @debug "Did second greedy selection" keep_vertices
     # remove vertices (passes 2 & 3)
     rem_vertices!(output_graph, ((vt.nb_atoms + 1):nv(output_graph))[.!keep_vertices])
+    @debug "Filtered V nodes" output_graph
     # make VV edges and label by lens volume
     calculate_lenses!(output_graph, vt)
+    @debug "Calculated lenses" output_graph
     return output_graph
 end
 

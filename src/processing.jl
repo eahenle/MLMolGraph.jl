@@ -186,6 +186,7 @@ end
 
 
 function process_example(xtal_name::String, element_to_int::Dict{Symbol,Int}, max_valency::Int, bonded_xtals_cache::String, graphs_path::String, args::Dict{Symbol,Any}, config::Union{Nothing,VSPNConfig}=nothing)
+    @debug "Processing example" xtal_name
     @load joinpath(bonded_xtals_cache, xtal_name) obj
     xtal, _ = obj
     write_data(xtal, xtal_name, element_to_int, max_valency, graphs_path, args, config)

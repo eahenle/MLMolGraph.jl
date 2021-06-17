@@ -3,7 +3,7 @@ struct VoroTess
     cells::Vector{Matrix{Float64}}
     box_params::Vector{Float64}
     atom_pts::Matrix{Float64}
-    n_dict::Dict{Int,Int}
+    n_dict::Dict{Int,Vector{Int}}
 end
 
 
@@ -19,7 +19,29 @@ struct VoroCell
 end
 
 
+function show(vc::VoroCell)
+    print("Vertices: $(vc.vertices)")
+    print("Neighboring cells: $(vc.neighbors)")
+end
+
+
+function show(vp::VoroPoint)
+    print("Coords: $(vp.coords)")
+    print("Vertex of cells: $(vp.cells)")
+end
+
+
+function show(vt::VoroTess)
+    print("Xtal: $(vt.xtal.name)")
+    print("$(length(vt.cells)) cells")
+    print("Box parameters: $(vt.box_params)")
+    print("$(size(vt.atom_pts, 2)) atom points")
+    print("Neighbors: $(vt.n_dict)")
+end
+
+
 function neighbor_dict(A::Vector{Int}, B::Vector{Int}, n::Int)::Dict{Int,Vector{Int}}
+    @debug "Building neighbor dictionary" n A B
     n_dict = Dict()
     for k ∈ 1:n
         i = A[k]
@@ -38,12 +60,14 @@ function neighbor_dict(A::Vector{Int}, B::Vector{Int}, n::Int)::Dict{Int,Vector{
     for (key, value) ∈ n_dict
         unique!(n_dict[key])
     end
+    @debug "Neighbor dictionary" n_dict
     return n_dict
 end
 
 
 # calculates the Voronoi tesselation
 function voronoi_tesselation(xtal::Crystal, points::Matrix{Float64}, box_params::Array{Float64,1})::VoroTess
+    @debug "Getting tesselation" xtal points box_params
     freud = rc[:freud]
     box = freud.box.Box.from_box(box_params)
     voro = freud.locality.Voronoi()
@@ -53,13 +77,15 @@ function voronoi_tesselation(xtal::Crystal, points::Matrix{Float64}, box_params:
     B = [i for i ∈ voro.nlist.point_indices]
     n = voro.nlist.num_points
     n_dict = neighbor_dict(A, B, n)
-    return VoroTess(xtal, cells, box, points, n_dict)
+    @debug "Building VoroTess" xtal cells box_params points n_dict
+    return VoroTess(xtal, cells, box_params, points, n_dict)
 end
 
 voronoi_tesselation(xtal::Crystal) = voronoi_tesselation(xtal, shift_coords(xtal), convert_box(xtal.box))
 
 
 function unique_voro_pts(vt::VoroTess)::Vector{VoroPoint}
+    @debug "Finding unique polytope vertices" vt
     points = VoroPoint[]
     cells = Array{VoroCell}(undef, length(vt.cells))
     # loop over vt.cells

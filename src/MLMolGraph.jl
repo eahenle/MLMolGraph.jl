@@ -1,9 +1,11 @@
 module MLMolGraph
 using Distributed
 
-using CSV, DataFrames, FIGlet, JLD2, LightGraphs, LinearAlgebra, MetaGraphs, NPZ, PyCall, Reexport
+using CSV, DataFrames, FIGlet, JLD2, LightGraphs, LinearAlgebra, Logging, MetaGraphs, NPZ, PyCall, Reexport
 
 @reexport using PorousMaterials
+
+import Base.show
 
 include("voronoi.jl")
 include("vspn.jl")
@@ -20,6 +22,7 @@ function __init__()
         mkpath(rc[:paths][:graphs])
     end
     rc[:freud] = pyimport("freud")
+    @debug "Module initialized." rc
 end
 
 export cached, xtals2primitive, bondNclassify, encode, read_targets, process_examples, clear_cache, run_process, vspn_graph
