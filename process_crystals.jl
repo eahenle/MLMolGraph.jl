@@ -38,7 +38,7 @@ args = parse_args(argparser, as_symbols=true)
 
 using CSV, FIGlet, MLMolGraph, NPZ
 
-FIGlet.render("MLMolGraph", FIGlet.availablefonts()[51])
+FIGlet.render("MLMolGraph", FIGlet.availablefonts()[64])
 @info "Loading data from $(args[:data])"
 @info "Cache at $(rc[:paths][:data]/cache)"
 @info "Target: $(args[:target])"

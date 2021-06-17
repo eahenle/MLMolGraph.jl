@@ -3,8 +3,8 @@ using Distributed
 
 @everywhere using CSV, DataFrames, JLD2, LightGraphs, MetaGraphs, NPZ, Reexport
 
-@reexport using Xtals # for user access to API
-@everywhere using Xtals # for distributed tasks
+@reexport using PorousMaterials # for user access to API
+@everywhere using PorousMaterials # for distributed tasks
 
 include("cache_tools.jl")
 include("processing.jl")
