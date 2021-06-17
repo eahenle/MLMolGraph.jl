@@ -8,7 +8,7 @@ function shift_coords(coords::Matrix{Float64}, box::Box)::Matrix{Float64}
 end
 
 
-function shift_back(coords::Matrix{Float64}, box::Box)::Matrix{Float64}
+function shift_back(coords::Vector{Float64}, box::Box)::Vector{Float64}
     return coords .+ box.f_to_c * [0.5, 0.5, 0.5]
 end
 
