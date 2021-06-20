@@ -3,7 +3,7 @@ function setup_cache(cache)
     rc[:cache][:primitive] = joinpath(cache, "primitive")
     rc[:cache][:bonded_xtals] = joinpath(cache, "bonded_xtals")
     for dir ∈ rc[:cache]
-        if !isdirpath(dir[2]) 
+        if !isdir(dir[2]) 
             mkpath(dir[2])
         end
     end

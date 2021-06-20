@@ -17,6 +17,7 @@ NPZ = "15e1cf62-19b3-5cfa-8e77-841668bca605"
 PorousMaterials = "68953c7c-a3c7-538e-83d3-73516288599e"
 PyCall = "438e738f-606a-5dbb-bf0a-cddfbfd45ab0"
 Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
+SharedArrays = "1a1011a3-84de-559e-8e89-a11a2f7dc383"
 Xtals = "ede5f01d-793e-4c47-9885-c447d1f18d6d"
 
 [compat]

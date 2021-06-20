@@ -41,31 +41,37 @@ function bondNclassify(xtal_list::Vector{String})::Vector{String}
     pcs = [rc[:cache][:primitive] for _ ∈ 1:l]
     bcs = [rc[:cache][:bonded_xtals] for _ ∈ 1:l]
     pmap(_bondNclassify, xtal_list, pcs, bcs)
-    return [xtal_file for xtal_file ∈ xtal_list if isgood(xtal_file)]
+    good = SharedArray{Bool}(length(xtal_list))
+    @sync @distributed for i ∈ 1:length(xtal_list)
+        good[i] = isgood(xtal_list[i])
+    end
+    return xtal_list[good]
+end
+
+
+function unique_elements_and_max_valency(xtal_file::String)
+	@load joinpath(rc[:cache][:bonded_xtals], xtal_file) obj
+    xtal = obj[1]
+    elements = unique(xtal.atoms.species)
+    max_valency = maximum([degree(xtal.bonds, i) for i ∈ 1:xtal.atoms.n])
+    return elements, max_valency
 end
 
 
 function encode(xtal_list::Vector{String})::Tuple{Dict{Symbol,Int},Int}
-	element_to_int = Dict{Symbol,Int}()
-	nb_elements = 0
-    max_valency = 0
-	for xtal_file ∈ xtal_list
-		@load joinpath(rc[:cache][:bonded_xtals], xtal_file) obj
-        xtal, good = obj
-        if good
-            unique_atoms = unique(xtal.atoms.species)
-            for (i,atom) ∈ enumerate(unique_atoms)
-                n = degree(xtal.bonds)[i]
-                if n > max_valency
-                    max_valency = n
-                end
-                if atom ∉ keys(element_to_int)
-                    nb_elements += 1
-                    element_to_int[atom] = nb_elements
-                end
-            end
+    n = length(xtal_list)
+    all_elements = [keys(rc[:covalent_radii])...] # list of all elements known to Xtals
+    elements = SharedArray{Bool}(length(all_elements)) # elements[i] == true iff keys(all_elements)[i] ∈ some xtal
+    max_val_arr = SharedArray{Int}(n)
+    @sync @distributed for i ∈ 1:n
+        xtal_elements, max_val_arr[i] = unique_elements_and_max_valency(xtal_list[i])
+        for element ∈ xtal_elements
+            j = findfirst(isequal(element), all_elements)
+            elements[j] = true
         end
-	end
+    end
+    max_valency = maximum(max_val_arr)
+	element_to_int = Dict{Symbol,Int}([element => i for (i, element) ∈ enumerate(all_elements[elements])])
 	return element_to_int, max_valency
 end
 
