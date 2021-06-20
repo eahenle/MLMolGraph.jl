@@ -12,7 +12,6 @@ end
 
 
 function collect_atoms!(graph::MetaGraph, xtal::Crystal)
-    @debug "Collecting atoms"  
     for i ∈ 1:xtal.atoms.n
         add_vertex!(graph, Dict(:type => :A, :species => xtal.atoms.species[i]))
     end
@@ -25,7 +24,6 @@ end
 
 
 function collect_vertices!(graph::MetaGraph, vt::VoroTess)
-    @debug "Collecting Voronoi vertices"
     points = unique_voro_pts(vt)
     for point ∈ points
         add_vertex!(graph, Dict(:type => :V, :point => point))
@@ -41,7 +39,6 @@ end
 
 
 function remove_high_E_verts!(graph::MetaGraph, vt::VoroTess, config::VSPNConfig)
-    @debug "Removing high-energy V nodes"
     high_E_verts = Int[]
     for i ∈ (vt.xtal.atoms.n + 1):nv(graph) # loop over vertex indices
         # translate probe to vertex
@@ -60,7 +57,6 @@ end
 
 
 function mark_radii!(graph::MetaGraph, vt::VoroTess)
-    @debug "Marking V node radii"
     for i ∈ (vt.xtal.atoms.n + 1):nv(graph) # loop over vertex indices
         min_dist = Inf
         for n ∈ neighbors(graph, i) # loop over adjacent cell atoms
@@ -77,13 +73,13 @@ end
 
 
 function greedy_selection1!(keep_vertices::BitVector, radius_order::Vector{Int}, vt::VoroTess, graph::MetaGraph)
-    @debug "First round of greedy algorithm"
     for i ∈ (vt.xtal.atoms.n .+ radius_order) # loop over vertices, largest radii first
         overlapping = false
         i_x = get_prop(graph, i, :point).coords
         i_r = get_prop(graph, i, :radius)
         for j ∈ findall(keep_vertices) # loop over vertices being kept and check if i is within radius of j ## TODO only check within local polytopes?
-            if pbc_distance(i_x, get_prop(graph, radius_order[j], :point).coords, vt.xtal.box) < i_r + get_prop(graph, radius_order[j], :radius)
+            nodej = radius_order[j] + vt.xtal.atoms.n
+            if pbc_distance(i_x, get_prop(graph, nodej, :point).coords, vt.xtal.box) < i_r + get_prop(graph, nodej, :radius)
                 overlapping = true # circumspheres of i and j overlap, so don't add i
                 break
             end
@@ -96,13 +92,11 @@ end
 
 
 function greedy_selection2!(keep_vertices::BitVector, radius_order::Vector{Int}, vt::VoroTess, graph::MetaGraph)
-    @debug "Second round of greedy algorithm" length(keep_vertices) length(radius_order) nv(graph) vt.xtal.atoms.n
     for i ∈ (vt.xtal.atoms.n .+ radius_order) # loop over vertices, largest radii first
         contained = false
         i_x = get_prop(graph, i, :point).coords
         i_r = get_prop(graph, i, :radius)
         for j ∈ findall(keep_vertices) # loop over vertices being kept and check if i is within radius of j ## TODO only check within local polytopes?
-            @debug "inner loop" i j
             if pbc_distance(i_x, get_prop(graph, vt.xtal.atoms.n + radius_order[j], :point).coords, vt.xtal.box) < i_r
                 contained = true # i is inside j's sphere, so don't add i
                 break
@@ -125,7 +119,7 @@ function calculate_lenses!(graph::MetaGraph, vt::VoroTess)
             j_r = get_prop(graph, j, :radius)
             dist = pbc_distance(i_x, get_prop(graph, j, :point).coords, vt.xtal.box)
             if dist < j_r + i_r
-                add_edge!(graph, i, j, Dict(:type => :VV, :lens => lens(i_r, i_j, dist)))
+                add_edge!(graph, i, j, Dict(:type => :VV, :lens => lens(i_r, j_r, dist)))
             end
         end
     end
@@ -147,7 +141,6 @@ function vspn_graph(xtal::Crystal, config::VSPNConfig)::MetaGraph
     mark_radii!(output_graph, vt)
     # sort vertices by radius, descending order
     radius_order = sortperm([get_prop(output_graph, i, :radius) for i ∈ (vt.xtal.atoms.n + 1):nv(output_graph)], rev=true)
-    @debug "V node indices by order of descending radius" radius_order length(radius_order)
     # determine which vertices to keep
     keep_vertices = falses(length(radius_order))
     # tag vertices for keeping (pass 2)
@@ -155,7 +148,10 @@ function vspn_graph(xtal::Crystal, config::VSPNConfig)::MetaGraph
     # tag vertices for keeping (pass 3)
     greedy_selection2!(keep_vertices, radius_order, vt, output_graph)
     # remove vertices (passes 2 & 3)
-    rem_vertices!(output_graph, ((vt.xtal.atoms.n + 1):nv(output_graph))[.!keep_vertices])
+    drop_verts = sort(((vt.xtal.atoms.n + 1):nv(output_graph))[.!keep_vertices], rev=true)
+    for v ∈ drop_verts
+        rem_vertex!(output_graph, v)
+    end
     # make VV edges and label by lens volume
     calculate_lenses!(output_graph, vt)
     return output_graph

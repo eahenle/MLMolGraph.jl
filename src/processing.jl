@@ -100,13 +100,13 @@ function edge_vectors(graph::MetaGraph, args::Dict{Symbol,Any})::Union{Tuple{Vec
 	l = 2 * edge_count
     edg_srcs = zeros(Int, l)
     edg_dsts = zeros(Int, l)
-    edg_lens = zeros(Float64, l)
-    for (i, edge) in enumerate(edges(graph))
-        edg_srcs[i] = edg_dsts[i + edge_count] = edge.src - 1 # python numbering
-        edg_dsts[i] = edg_srcs[i + edge_count] = edge.dst - 1
-        edg_lens[i] = edg_lens[i + edge_count] = get_prop(graph, edge, :distance)
-    end
     if args[:bonds]
+        edg_lens = zeros(Float64, l)
+        for (i, edge) in enumerate(edges(graph))
+            edg_srcs[i] = edg_dsts[i + edge_count] = edge.src - 1 # python numbering
+            edg_dsts[i] = edg_srcs[i + edge_count] = edge.dst - 1
+            edg_lens[i] = edg_lens[i + edge_count] = get_prop(graph, edge, :distance)
+        end
         return edg_srcs, edg_dsts, edg_lens
     elseif args[:vspn]
         edg_type = zeros(Int, l)

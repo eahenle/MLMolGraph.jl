@@ -1,8 +1,8 @@
 testfiles = [
-    "run_process.jl",
     "processing.jl",
-    "cache_tools.jl",
-    "voronoi.jl"
+    "voronoi.jl",
+    "run_process.jl",
+    "cache_tools.jl"
 ]
 LOGGING_LEVEL = :Debug
 

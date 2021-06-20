@@ -2,6 +2,8 @@ module Run_process_test
 
 using Test, MLMolGraph
 
+# Note: must specify all args (argparse not applied)
+
 @testset "vspn" begin
     clear_cache()
     run_process(Dict(

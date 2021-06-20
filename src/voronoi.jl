@@ -32,7 +32,7 @@ end
 
 
 function show(vt::VoroTess)
-    print("Xtal: $(vt.xtal.name)")
+    print("Crystal: $(vt.xtal.name)")
     print("$(length(vt.cells)) cells")
     print("Box parameters: $(vt.box_params)")
     print("$(size(vt.atom_pts, 2)) atom points")
@@ -41,9 +41,10 @@ end
 display(vt::VoroTess) = show(vt)
 
 
-function neighbor_dict(A::Vector{Int}, B::Vector{Int}, n::Int)::Dict{Int,Vector{Int}}
+function neighbor_dict(A::Vector{Int}, B::Vector{Int})::Dict{Int,Vector{Int}}
+    @assert length(A) == length(B)
     n_dict = Dict()
-    for k ∈ 1:n
+    for k ∈ 1:length(A)
         i = A[k]
         j = B[k]
         if i ∈ keys(n_dict)
@@ -71,11 +72,16 @@ function voronoi_tesselation(xtal::Crystal, points::Matrix{Float64}, box_params:
     voro = freud.locality.Voronoi()
     voro.compute((box, points))
     cells = voro.polytopes
+    # round point coords to 6 digits for uniqueness testing
+    for i ∈ 1:length(cells)
+        for j ∈ 1:length(cells[i])
+            cells[i][j] = round(cells[i][j], digits=6)
+        end
+    end
     # correct for Python indexing
     A = [i+1 for i ∈ voro.nlist.query_point_indices]
     B = [i+1 for i ∈ voro.nlist.point_indices]
-    n = voro.nlist.num_points
-    n_dict = neighbor_dict(A, B, n)
+    n_dict = neighbor_dict(A, B)
     return VoroTess(xtal, cells, box_params, points, n_dict)
 end
 
