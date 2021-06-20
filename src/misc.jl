@@ -57,15 +57,20 @@ end
 function validate_args(args::Dict{Symbol,Any})::Tuple{Bool,String}
     if !ispath(args[:data])
         return false, "Invalid data path"
-    elseif args[:angles] && !args[:bonds]
-        return false, "Must specify bonds when requesting angles"
-    elseif args[:vspn] && (args[:forcefield] == "" || args[:probe] == "")
-        return false, "Must specify probe and forcefield for VSPN"
-    elseif !ispath(args[:cache])
-        return false, "Invalid cache path"
-    else
-        return true, ""
     end
+    if args[:angles] && !args[:bonds]
+        return false, "Must specify bonds when requesting angles"
+    end
+    if args[:vspn] && (args[:forcefield] == "" || args[:probe] == "")
+        return false, "Must specify probe and forcefield for VSPN"
+    end
+    if !ispath(args[:cache])
+        return false, "Invalid cache path"
+    end
+    if args[:vspn] && args[:bonds]
+        return false, "Cannot specify bonds with VSPN"
+    end
+    return true, ""
 end
 
 

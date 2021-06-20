@@ -1,10 +1,10 @@
 testfiles = [
-    "processing.jl",
+    "cache_tools.jl",
     "voronoi.jl",
-    "run_process.jl",
-    "cache_tools.jl"
+    "processing.jl",
+    "run_process.jl"
 ]
-LOGGING_LEVEL = :Debug
+LOGGING_LEVEL = :Info
 
 using Test, Logging
 global_logger(ConsoleLogger(stdout, getproperty(Logging, LOGGING_LEVEL)))

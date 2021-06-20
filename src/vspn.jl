@@ -110,7 +110,6 @@ end
 
 
 function calculate_lenses!(graph::MetaGraph, vt::VoroTess)
-    @debug "Calculating VV edge lenses"
     for i ∈ (vt.xtal.atoms.n + 1):nv(graph) # loop over remaining vertices
         i_r = get_prop(graph, i, :radius)
         i_x = get_prop(graph, i, :point).coords
