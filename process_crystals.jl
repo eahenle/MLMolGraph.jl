@@ -41,7 +41,14 @@ argparser = ArgParseSettings(
 end
 args = parse_args(argparser, as_symbols=true)
 
-using CSV, MLMolGraph, NPZ
+using CSV, Distributed, NPZ
+
+@everywhere begin ## pre-registration dev hack. makes wall of annoying console output.
+    import Pkg
+    Pkg.activate(".")
+end
+
+@everywhere using MLMolGraph
 
 MLMolGraph.banner()
 @info "Loading data from $(args[:data])"

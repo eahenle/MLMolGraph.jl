@@ -5,7 +5,7 @@ function xtals2primitive(xtal_list::Vector{String})
                 xtal = Crystal(xtal_file, remove_duplicates=true)
                 return primitive_cell(xtal)
             catch exception
-                error(exception)
+                @error xtal_file exception
                 return Crystal("bad input", unit_cube(), 
                     Atoms([:foo], Frac([0.;0.;0.])), 
                     Charges{Frac}(0))
