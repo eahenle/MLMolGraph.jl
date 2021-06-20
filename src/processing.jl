@@ -26,7 +26,7 @@ function _bondNclassify(xtal_name::String, primitive_cache::String, bonded_cache
     cached(joinpath(bonded_cache, xtal_name)) do 
         @load joinpath(primitive_cache, xtal_name) obj
         xtal = obj
-        if infer_bonds!(xtal, true)
+        if infer_bonds!(xtal, true, calculate_vectors=true)
             good = true
         else
             good = false
