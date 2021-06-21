@@ -1,4 +1,5 @@
 testfiles = [
+    "misc.jl",
     "cache_tools.jl",
     "voronoi.jl",
     "processing.jl",
