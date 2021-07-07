@@ -60,7 +60,8 @@ function run_process(args)
         vspn_dict = cached("vspn_dict.jld2") do
             vspn_dict = Dict{String,Dict{Symbol,Any}}()
             for (i, xtal) ∈ enumerate(good_xtals)
-                @load joinpath(rc[:cache][:vspn], "$xtal.jld2") obj
+                xtal_name = split(xtal, ".cif")[1]
+                @load joinpath(rc[:cache][:vspn], "$xtal_name.jld2") obj
                 g = obj
                 y = target_df[i, args[:target]]
                 vspn_dict[xtal] = Dict(:graph => g, :target => y)

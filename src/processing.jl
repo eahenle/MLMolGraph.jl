@@ -1,8 +1,9 @@
 function xtals2primitive(xtal_list::Vector{String})
     @sync @distributed for xtal_file ∈ xtal_list
-        cached(joinpath(rc[:cache][:primitive], xtal_file)) do 
+        xtal_filename = String(split(xtal_file, "/")[end])
+        cached("primitive/$xtal_filename") do 
             try
-                xtal = Crystal(xtal_file, remove_duplicates=true)
+                xtal = Crystal(xtal_filename, remove_duplicates=true)
                 return primitive_cell(xtal)
             catch exception
                 @error xtal_file exception
@@ -22,9 +23,9 @@ function isgood(xtal_file::String)::Bool
 end
 
 
-function _bondNclassify(xtal_name::String, primitive_cache::String, bonded_cache::String)::Tuple{Crystal,Bool}
-    cached(joinpath(bonded_cache, xtal_name)) do 
-        @load joinpath(primitive_cache, xtal_name) obj
+function _bondNclassify(xtal_name::String)::Tuple{Crystal,Bool}
+    cached("bonded_xtals/$xtal_name") do 
+        @load joinpath(rc[:cache][:primitive], xtal_name) obj
         xtal = obj
         if infer_bonds!(xtal, true, calculate_vectors=true)
             good = true
@@ -37,10 +38,7 @@ end
 
 
 function bondNclassify(xtal_list::Vector{String})::Vector{String}
-    l = length(xtal_list)
-    pcs = [rc[:cache][:primitive] for _ ∈ 1:l]
-    bcs = [rc[:cache][:bonded_xtals] for _ ∈ 1:l]
-    pmap(_bondNclassify, xtal_list, pcs, bcs)
+    pmap(_bondNclassify, xtal_list)
     good = SharedArray{Bool}(length(xtal_list))
     @sync @distributed for i ∈ 1:length(xtal_list)
         good[i] = isgood(xtal_list[i])

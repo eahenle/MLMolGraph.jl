@@ -6,3 +6,5 @@ test/data/cache/*
 test/*.csv
 test/*.npy
 .vscode
+*.csv
+*.npy

@@ -60,6 +60,7 @@ MLMolGraph.banner()
 @info "Target: $(args[:target])"
 
 set_paths(args[:data])
+setup_cache(args[:cache])
 if args[:clear_cache]
     @info "Clearing cache..."
     clear_cache()
