@@ -37,6 +37,10 @@ argparser = ArgParseSettings(
         help = "cache location"
         arg_type = String
         default = joinpath(pwd(), "data", "cache")
+    "--env", "-e"
+        help = "environment (python or julia)"
+        arg_type = String
+        default = "julia"
 
 end
 args = parse_args(argparser, as_symbols=true)

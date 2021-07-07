@@ -46,11 +46,26 @@ function run_process(args)
         @info "Reading target data..."
         return read_targets("properties.csv", good_xtals, args[:target])
     end
-    CSV.write(joinpath("cofs.csv"), target_df)
+    CSV.write(joinpath("targets.csv"), target_df)
     npzwrite("y.npy", target_df[:, args[:target]])
 
 
-    # process the graphs into array representations
+    # process the graphs into ML inputs
     @info "Processing examples..."
     process_examples(good_xtals, element_to_int, max_valency, args)
+
+    if args[:env] == "julia" && args[:vspn]
+        @info "Preparing VSPN data dictionary..."
+        # pack graphs and targets into Dict for VSPN model data loader
+        vspn_dict = cached("vspn_dict.jld2") do
+            vspn_dict = Dict{String,Dict{Symbol,Any}}()
+            for (i, xtal) ∈ enumerate(good_xtals)
+                @load joinpath(rc[:cache][:vspn], "$xtal.jld2") obj
+                g = obj
+                y = target_df[i, args[:target]]
+                vspn_dict[xtal] = Dict(:graph => g, :target => y)
+            end
+            return vspn_dict
+        end
+    end
 end
