@@ -1,7 +1,7 @@
 module MLMolGraph
 using Distributed
 
-using CSV, DataFrames, FIGlet, JLD2, LightGraphs, LinearAlgebra, Logging, MetaGraphs, NPZ, PyCall, Reexport, SharedArrays
+using CSV, DataFrames, FIGlet, JLD2, LightGraphs, LinearAlgebra, Logging, MetaGraphs, NPZ, PyCall, Reexport, SharedArrays, SparseArrays
 
 @reexport using PorousMaterials
 

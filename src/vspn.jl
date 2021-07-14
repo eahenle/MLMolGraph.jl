@@ -1,6 +1,6 @@
 struct VSPN_Input_Struct
-    adj_mat::SparseMatrixCSC
-    X::SparseMatrixCSC
+    adj_mat::SparseArrays.SparseMatrixCSC
+    X::SparseArrays.SparseMatrixCSC
 end
 
 
