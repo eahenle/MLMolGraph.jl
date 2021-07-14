@@ -1,3 +1,9 @@
+struct VSPN_Input_Struct
+    adj_mat::SparseMatrixCSC
+    X::SparseMatrixCSC
+end
+
+
 struct VSPNConfig
     probe::Molecule
     ljff::LJForceField

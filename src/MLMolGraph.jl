@@ -24,6 +24,7 @@ function __init__()
     rc[:freud] = pyimport("freud")
 end
 
-export cached, xtals2primitive, bondNclassify, encode, read_targets, process_examples, clear_cache, run_process, vspn_graph, voronoi_tesselation, setup_cache
+export  cached, xtals2primitive, bondNclassify, encode, read_targets, process_examples, clear_cache, run_process, 
+        vspn_graph, voronoi_tesselation, setup_cache, VSPN_Input_Struct
 
 end
