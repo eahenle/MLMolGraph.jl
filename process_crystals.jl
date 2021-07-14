@@ -8,7 +8,7 @@ argparser = ArgParseSettings(
     "--target", "-t"
         help = "training target"
         arg_type = Symbol
-        default = Symbol("deliverable capacity [v STP/v]")
+        default = Symbol("working_capacity_vacuum_swing [mmol/g]")
     "--data", "-d"
         help = "root of data tree. inputs loaded from `crystals` subdirectory."
         arg_type = String
@@ -41,6 +41,10 @@ argparser = ArgParseSettings(
         help = "environment (python or julia)"
         arg_type = String
         default = "julia"
+    "--primitive", "-r"
+        help = "reduce input to primitive cell"
+        arg_type = Bool
+        default = true
 
 end
 args = parse_args(argparser, as_symbols=true)

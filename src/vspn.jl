@@ -1,6 +1,8 @@
 struct VSPN_Input_Struct
+    xtal_name::String
     adj_mat::SparseArrays.SparseMatrixCSC
     X::SparseArrays.SparseMatrixCSC
+    y::Float64
 end
 
 

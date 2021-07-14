@@ -18,8 +18,23 @@ function run_process(args)
 
     # process inputs to primitive cells
     cached("primitives_done.jld2") do
-        @info "Converting to primitive cells..."
-        xtals2primitive(xtal_list)
+        if args[:primitive]
+            @info "Converting to primitive cells..."
+            xtals2primitive(xtal_list)
+        else ## TODO make less hacky: have bondNclassify pull from different dir depending on args[:primitive]
+            for xtal_filename ∈ xtal_list
+                cached("primitive/$xtal_filename") do 
+                    try
+                        return Crystal(xtal_filename, remove_duplicates=true)
+                    catch exception
+                        @error xtal_file exception
+                        return Crystal("bad input", unit_cube(), 
+                            Atoms([:foo], Frac([0.;0.;0.])), 
+                            Charges{Frac}(0))
+                    end
+                end
+            end
+        end
         return true
     end
 
@@ -56,17 +71,22 @@ function run_process(args)
 
     if args[:env] == "julia" && args[:vspn]
         @info "Preparing VSPN data dictionary..."
-        # pack graphs and targets into Dict for VSPN model data loader
-        vspn_dict = cached("vspn_dict.jld2") do
-            vspn_dict = Dict{String,Dict{Symbol,Any}}()
+        # pack data into array for VSPN dataloader
+        cached("vspns.jld2") do
+            vspns = VSPN_Input_Struct[]
             for (i, xtal) ∈ enumerate(good_xtals)
                 xtal_name = split(xtal, ".cif")[1]
                 @load joinpath(rc[:cache][:vspn], "$xtal_name.jld2") obj
-                g = obj
+                g, X = obj
                 y = target_df[i, args[:target]]
-                vspn_dict[xtal] = Dict(:graph => g, :target => y)
+                push!(vspns, VSPN_Input_Struct(
+                    xtal_name,
+                    adjacency_matrix(g),
+                    sparse(X),
+                    y
+                ))
             end
-            return vspn_dict
+            return vspns
         end
     end
 end

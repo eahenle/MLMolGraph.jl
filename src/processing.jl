@@ -75,7 +75,7 @@ end
 
 
 function read_targets(source::String, examples::Vector{String}, target_symbol::Symbol)::DataFrame
-    df = CSV.read(joinpath(rc[:paths][:data], source), DataFrame, delim=", ")
+    df = CSV.read(joinpath(rc[:paths][:data], source), DataFrame, delim=",")
     select!(df, [:name, target_symbol])
     filter!(r -> "$(r.name).cif" ∈ examples, df)
     return df
@@ -157,9 +157,32 @@ function bond_angle_vecs(xtal::Crystal)::Tuple{Vector{Int},Vector{Int},Vector{In
 end
 
 
+function vspn_feature_matrix(g::MetaGraph, xtal::Crystal, max_valency::Int, element_to_int::Dict)::SparseMatrixCSC
+    nb_atom_types = length(element_to_int)
+    embedding_length = nb_atom_types + 1 + max_valency
+    X = zeros(Int, nv(g), embedding_length)
+    for i in 1:nv(g)
+        if get_prop(g, i, :type) == :A # atom
+            X[i, element_to_int[xtal.atoms.species[i]]] = 1
+            X[i, nb_atom_types + 1 + degree(xtal.bonds)[i]] = 1
+        else # voro pt
+            X[i, nb_atom_types + 1] = 1
+        end
+    end
+    return sparse(X)
+end
+
+
 function write_data(xtal::Crystal, name::String, element_to_int::Dict{Symbol,Int}, max_valency::Int, graphs_path::String, args::Dict{Symbol,Any}, config::Union{Nothing,VSPNConfig}=nothing)
-    X = node_feature_matrix(xtal, max_valency, element_to_int)
     X_name = chop(name, tail=4)
+    if args[:vspn]
+        cached("vspn/$X_name.jld2") do
+            g = vspn_graph(xtal, config)
+            return g, vspn_feature_matrix(g, xtal, max_valency, element_to_int)
+        end
+        return
+    end
+    X = node_feature_matrix(xtal, max_valency, element_to_int)
 	# bond graph
     if args[:bonds]
         A, B, D = edge_vectors(xtal.bonds, args)
@@ -167,20 +190,6 @@ function write_data(xtal::Crystal, name::String, element_to_int::Dict{Symbol,Int
         npzwrite(joinpath(graphs_path, X_name * "_edges_src.npy"), A)
         npzwrite(joinpath(graphs_path, X_name * "_edges_dst.npy"), B)
         npzwrite(joinpath(graphs_path, X_name * "_euc.npy"), D)
-    end
-    # VSPN graph
-    if args[:vspn]
-        vspn = cached("vspn/$X_name.jld2") do
-            return vspn_graph(xtal, config)
-        end
-        if args[:env] == "python"
-            A, B, T, W = edge_vectors(vspn, args)
-            npzwrite(joinpath(graphs_path, X_name * "_vspn_node_features.npy"), X)
-            npzwrite(joinpath(graphs_path, X_name * "_vspn_edges_src.npy"), A)
-            npzwrite(joinpath(graphs_path, X_name * "_vspn_edges_dst.npy"), B)
-            npzwrite(joinpath(graphs_path, X_name * "_vspn_edges_types.npy"), T)
-            npzwrite(joinpath(graphs_path, X_name * "_vspn_edges_weights.npy"), W)
-        end
     end
 	# bond angles
     if args[:angles]
