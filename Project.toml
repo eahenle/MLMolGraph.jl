@@ -23,7 +23,7 @@ Xtals = "ede5f01d-793e-4c47-9885-c447d1f18d6d"
 
 [compat]
 Reexport = "^1.1.0"
-Xtals = "^0.3.4"
+Xtals = "^0.3.3"
 
 [extras]
 ArgParse = "c7e460c6-2fb9-53a9-8c5b-16f535851c63"
