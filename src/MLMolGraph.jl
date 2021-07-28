@@ -17,7 +17,7 @@ include("misc.jl")
 function __init__()
     rc[:cache] = Dict()
     setup_cache(joinpath(pwd(), "data", "cache"))
-    rc[:paths][:graphs] = joinpath(rc[:paths][:data], "Graphs")
+    rc[:paths][:graphs] = joinpath(rc[:paths][:data], "graphs")
     if !isdirpath(rc[:paths][:graphs])
         mkpath(rc[:paths][:graphs])
     end
