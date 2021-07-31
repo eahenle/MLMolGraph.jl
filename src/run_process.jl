@@ -19,21 +19,9 @@ function run_process(args)
     # process inputs to primitive cells
     cached("primitives_done.jld2") do
         if args[:primitive]
-            @info "Converting to primitive cells..."
             xtals2primitive(xtal_list)
         else ## TODO make less hacky: have bondNclassify pull from different dir depending on args[:primitive]
-            for xtal_filename ∈ xtal_list
-                cached("primitive/$xtal_filename") do 
-                    try
-                        return Crystal(xtal_filename, remove_duplicates=true)
-                    catch exception
-                        @error xtal_file exception
-                        return Crystal("bad input", unit_cube(), 
-                            Atoms([:foo], Frac([0.;0.;0.])), 
-                            Charges{Frac}(0))
-                    end
-                end
-            end
+            loadcheck(xtal_list)
         end
         return true
     end
@@ -41,19 +29,18 @@ function run_process(args)
 
     # infer bonds, test quality
     good_xtals = cached("good_xtals.jld2") do
-        @info "Bonding and classifying..."
         return bondNclassify(xtal_list)
     end
     @info "$(length(good_xtals)) good bonded xtals."
 
 
     # determine atom node encoding scheme
-    element_to_int, max_valency = cached("encoding.jld2") do 
-        @info "Determining encoding scheme..."
+    element_to_int, max_valency, encoding_length = cached("encoding.jld2") do 
         return encode(good_xtals)
     end
-    @info "Encoding:" element_to_int max_valency
+    @info "Encoding:" element_to_int max_valency encoding_length
     CSV.write("atom_to_int.csv", element_to_int)
+    npzwrite("encoding_length.npy", encoding_length)
 
 
     # get the target data
@@ -66,7 +53,6 @@ function run_process(args)
 
 
     # process the graphs into ML inputs
-    @info "Processing examples..."
     process_examples(good_xtals, element_to_int, max_valency, args)
 
     if args[:env] == "julia" && args[:vspn]

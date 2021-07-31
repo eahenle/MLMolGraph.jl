@@ -1,7 +1,7 @@
 module MLMolGraph
 using Distributed
 
-using CSV, DataFrames, FIGlet, JLD2, LightGraphs, LinearAlgebra, Logging, MetaGraphs, NPZ, PyCall, Reexport, SharedArrays, SparseArrays
+using CSV, DataFrames, FIGlet, JLD2, LightGraphs, LinearAlgebra, Logging, MetaGraphs, NPZ, ProgressMeter, PyCall, Reexport, SharedArrays, SparseArrays
 
 @reexport using PorousMaterials
 
@@ -21,7 +21,12 @@ function __init__()
     if !isdirpath(rc[:paths][:graphs])
         mkpath(rc[:paths][:graphs])
     end
-    rc[:freud] = pyimport("freud")
+    try
+        rc[:freud] = pyimport("freud")
+    catch
+        rc[:freud] = nothing
+        @warn "Python package freud not installed"
+    end
 end
 
 export  cached, xtals2primitive, bondNclassify, encode, read_targets, process_examples, clear_cache, run_process, 

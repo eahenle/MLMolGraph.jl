@@ -1,5 +1,22 @@
+function loadcheck(xtal_list::Vector{String})
+    @showprogress "Checking file loadability:" @distributed for xtal_file ∈ xtal_list
+        xtal_filename = String(split(xtal_file, "/")[end])
+        cached("primitive/$xtal_filename") do 
+            try
+                return Crystal(xtal_filename, remove_duplicates=true)
+            catch exception
+                @error xtal_file exception
+                return Crystal("bad input", unit_cube(), 
+                    Atoms([:foo], Frac([0.;0.;0.])), 
+                    Charges{Frac}(0))
+            end
+        end
+    end
+end
+
+
 function xtals2primitive(xtal_list::Vector{String})
-    @sync @distributed for xtal_file ∈ xtal_list
+    @showprogress "Converting to primitive cells:" @distributed for xtal_file ∈ xtal_list
         xtal_filename = String(split(xtal_file, "/")[end])
         cached("primitive/$xtal_filename") do 
             try
@@ -38,9 +55,11 @@ end
 
 
 function bondNclassify(xtal_list::Vector{String})::Vector{String}
-    pmap(_bondNclassify, xtal_list)
+    @showprogress "Inferring bonds:" pmap(xtal_list) do x
+        _bondNclassify(x)
+    end
     good = SharedArray{Bool}(length(xtal_list))
-    @sync @distributed for i ∈ 1:length(xtal_list)
+    @showprogress "Classifying structures:" @distributed for i ∈ 1:length(xtal_list)
         good[i] = isgood(xtal_list[i])
     end
     return xtal_list[good]
@@ -56,12 +75,12 @@ function unique_elements_and_max_valency(xtal_file::String)
 end
 
 
-function encode(xtal_list::Vector{String})::Tuple{Dict{Symbol,Int},Int}
+function encode(xtal_list::Vector{String})::Tuple{Dict{Symbol,Int},Int,Int}
     n = length(xtal_list)
     all_elements = [keys(rc[:covalent_radii])...] # list of all elements known to Xtals
     elements = SharedArray{Bool}(length(all_elements)) # elements[i] == true iff keys(all_elements)[i] ∈ some xtal
     max_val_arr = SharedArray{Int}(n)
-    @sync @distributed for i ∈ 1:n
+    @showprogress "Determining encoding scheme:" @distributed for i ∈ 1:n
         xtal_elements, max_val_arr[i] = unique_elements_and_max_valency(xtal_list[i])
         for element ∈ xtal_elements
             j = findfirst(isequal(element), all_elements)
@@ -70,7 +89,8 @@ function encode(xtal_list::Vector{String})::Tuple{Dict{Symbol,Int},Int}
     end
     max_valency = maximum(max_val_arr)
 	element_to_int = Dict{Symbol,Int}([element => i for (i, element) ∈ enumerate(all_elements[elements])])
-	return element_to_int, max_valency
+    encoding_length = max_valency + length(element_to_int)
+	return element_to_int, max_valency, encoding_length
 end
 
 
@@ -210,17 +230,14 @@ end
 
 
 function process_examples(good_xtals::Vector{String}, element_to_int::Dict{Symbol,Int}, max_valency::Int, args::Dict{Symbol,Any})
-    l = length(good_xtals)
-    els = [element_to_int for _ ∈ 1:l]
-    mvs = [max_valency for _ ∈ 1:l]
-    bxc = [rc[:cache][:bonded_xtals] for _ ∈ 1:l]
-    gps = [rc[:paths][:graphs] for _ ∈ 1:l]
-    ags = [args for _ ∈ 1:l]
     if args[:vspn]
         config = VSPNConfig(args[:probe], args[:forcefield])
-        cfs = [config for _ ∈ 1:l]
-        pmap(process_example, good_xtals, els, mvs, bxc, gps, ags, cfs)
+        @showprogress "Processing examples:" pmap(good_xtals) do x
+            process_example(x, element_to_int, max_valency, rc[:cache][:bonded_xtals], rc[:paths][:graphs], args, config)
+        end
     else
-        pmap(process_example, good_xtals, els, mvs, bxc, gps, ags)
+        @showprogress "Processing examples:" pmap(good_xtals) do x
+            process_example(x, element_to_int, max_valency, rc[:cache][:bonded_xtals], rc[:paths][:graphs], args)
+        end
     end
 end

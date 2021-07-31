@@ -49,7 +49,7 @@ argparser = ArgParseSettings(
 end
 args = parse_args(argparser, as_symbols=true)
 
-using CSV, Distributed, NPZ
+using Distributed
 
 @everywhere begin ## pre-registration dev hack. makes wall of annoying console output.
     import Pkg
