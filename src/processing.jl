@@ -1,9 +1,9 @@
-function loadcheck(xtal_list::Vector{String})
+function loadcheck(xtal_list::Vector{String}, tolerance::Float64)
     @showprogress "Checking file loadability:" @distributed for xtal_file ∈ xtal_list
         xtal_filename = String(split(xtal_file, "/")[end])
         cached("primitive/$xtal_filename") do 
             try
-                return Crystal(xtal_filename, remove_duplicates=true)
+                return Crystal(xtal_filename, remove_duplicates=true, net_charge_tol=tolerance)
             catch exception
                 @error xtal_file exception
                 return Crystal("bad input", unit_cube(), 
@@ -15,12 +15,13 @@ function loadcheck(xtal_list::Vector{String})
 end
 
 
-function xtals2primitive(xtal_list::Vector{String})
+# TODO add optional arguments for changing the net_charge_tol
+function xtals2primitive(xtal_list::Vector{String}, tolerance::Float64)
     @showprogress "Converting to primitive cells:" @distributed for xtal_file ∈ xtal_list
         xtal_filename = String(split(xtal_file, "/")[end])
         cached("primitive/$xtal_filename") do 
             try
-                xtal = Crystal(xtal_filename, remove_duplicates=true)
+                xtal = Crystal(xtal_filename, remove_duplicates=true, net_charge_tol=tolerance)
                 return primitive_cell(xtal)
             catch exception
                 @error xtal_file exception

@@ -19,9 +19,9 @@ function run_process(args)
     # process inputs to primitive cells
     cached("primitives_done.jld2") do
         if args[:primitive]
-            xtals2primitive(xtal_list)
+            xtals2primitive(xtal_list, args[:tolerance])
         else ## TODO make less hacky: have bondNclassify pull from different dir depending on args[:primitive]
-            loadcheck(xtal_list)
+            loadcheck(xtal_list, args[:tolerance])
         end
         return true
     end
