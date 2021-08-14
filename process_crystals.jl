@@ -45,6 +45,10 @@ argparser = ArgParseSettings(
         help = "reduce input to primitive cell"
         arg_type = Bool
         default = true
+    "--tolerance", "-n"
+        help = "set net charge tolerance for Crystal()"
+        arg_type = Float64
+        default = 1e-4
 
 end
 args = parse_args(argparser, as_symbols=true)
