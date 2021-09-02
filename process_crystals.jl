@@ -49,6 +49,10 @@ argparser = ArgParseSettings(
         help = "number of inputs to sample (0 -> use all)"
         arg_type = Int
         default = 0
+    "--tolerance", "-n"
+        help = "set net charge tolerance for Crystal()"
+        arg_type = Float64
+        default = 1e-4
 
 end
 args = parse_args(argparser, as_symbols=true)
