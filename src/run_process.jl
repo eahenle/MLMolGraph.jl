@@ -15,6 +15,10 @@ function run_process(args)
     end
     @info "$(length(xtal_list)) inputs."
 
+    # sample list, if requested
+    if args[:samples] ≠ 0
+        xtal_list = sample(xtal_list, args[:samples], replace=false)
+    end
 
     # process inputs to primitive cells
     cached("primitives_done.jld2") do

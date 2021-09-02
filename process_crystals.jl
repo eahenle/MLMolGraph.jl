@@ -45,6 +45,10 @@ argparser = ArgParseSettings(
         help = "reduce input to primitive cell"
         arg_type = Bool
         default = true
+    "--samples", "-s"
+        help = "number of inputs to sample (0 -> use all)"
+        arg_type = Int
+        default = 0
 
 end
 args = parse_args(argparser, as_symbols=true)
