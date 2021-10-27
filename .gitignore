@@ -9,3 +9,5 @@ test/*.npy
 *.csv
 *.npy
 .temp*
+*.xyz
+*.vtk
