@@ -4,6 +4,7 @@ authors = ["SimonEnsemble <cory.simon@oregonstate.edu>"]
 version = "0.0.1"
 
 [deps]
+ArrayInterface = "4fba245c-0d91-5ea0-9b3e-6abc04ee57a9"
 CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
 Distributed = "8ba89e20-285c-5b6f-9357-94700520ee1b"
@@ -14,6 +15,7 @@ LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 Logging = "56ddb016-857b-54e1-b83d-db4d58db5568"
 MetaGraphs = "626554b9-1ddb-594c-aa3c-2596fe9399a5"
 NPZ = "15e1cf62-19b3-5cfa-8e77-841668bca605"
+OffsetArrays = "6fe1bfb0-de20-5000-8ca7-80f57d26f881"
 PorousMaterials = "68953c7c-a3c7-538e-83d3-73516288599e"
 ProgressMeter = "92933f4c-e287-5a05-a399-4b506db050ca"
 PyCall = "438e738f-606a-5dbb-bf0a-cddfbfd45ab0"

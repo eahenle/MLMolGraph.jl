@@ -67,9 +67,6 @@ function validate_args(args::Dict{Symbol,Any})::Tuple{Bool,String}
     if !ispath(args[:cache])
         return false, "Invalid cache path"
     end
-    if args[:vspn] && args[:bonds]
-        return false, "Cannot specify bonds with VSPN"
-    end
     return true, ""
 end
 

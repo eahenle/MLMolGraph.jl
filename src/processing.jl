@@ -67,31 +67,31 @@ function bondNclassify(xtal_list::Vector{String})::Vector{String}
 end
 
 
-function unique_elements_and_max_valency(xtal_file::String)
+function unique_elements(xtal_file::String, args)
 	@load joinpath(rc[:cache][:bonded_xtals], xtal_file) obj
     xtal = obj[1]
     elements = unique(xtal.atoms.species)
-    max_valency = maximum([degree(xtal.bonds, i) for i ∈ 1:xtal.atoms.n])
-    return elements, max_valency
+    if args[:verbose]
+        @info "$elements unique elements in $(xtal.name)"
+    end
+    return elements
 end
 
 
-function encode(xtal_list::Vector{String})::Tuple{Dict{Symbol,Int},Int,Int}
+function encode(xtal_list::Vector{String}, args)
     n = length(xtal_list)
     all_elements = [keys(rc[:covalent_radii])...] # list of all elements known to Xtals
     elements = SharedArray{Bool}(length(all_elements)) # elements[i] == true iff keys(all_elements)[i] ∈ some xtal
-    max_val_arr = SharedArray{Int}(n)
-    @showprogress "Determining encoding scheme:" @distributed for i ∈ 1:n
-        xtal_elements, max_val_arr[i] = unique_elements_and_max_valency(xtal_list[i])
-        for element ∈ xtal_elements
-            j = findfirst(isequal(element), all_elements)
-            elements[j] = true
-        end
+    if args[:verbose]
+        @info "Encoding $n structures' atoms against list of $(length(all_elements)) elements"
     end
-    max_valency = maximum(max_val_arr)
+    @showprogress "Determining encoding scheme:" @distributed for i ∈ 1:n
+        xtal_elements = unique_elements(xtal_list[i], args)
+        elements[[findfirst(isequal(element), all_elements) for element in xtal_elements]] .= true
+    end
 	element_to_int = Dict{Symbol,Int}([element => i for (i, element) ∈ enumerate(all_elements[elements])])
-    encoding_length = max_valency + length(element_to_int)
-	return element_to_int, max_valency, encoding_length
+    encoding_length = length(element_to_int)
+	return element_to_int, encoding_length
 end
 
 
@@ -103,8 +103,8 @@ function read_targets(source::String, examples::Vector{String}, target_symbol::S
 end
 
 
-function node_feature_matrix(xtal::Crystal, max_valency::Int, element_to_int::Dict{Symbol,Int})
-    embedding_length = length(element_to_int) + max_valency
+function node_feature_matrix(xtal::Crystal, element_to_int::Dict{Symbol,Int})
+    embedding_length = length(element_to_int)
     X = zeros(Int, xtal.atoms.n, embedding_length)
     for (i, atom) in enumerate(xtal.atoms.species)
         X[i, element_to_int[atom]] = 1
@@ -114,7 +114,7 @@ function node_feature_matrix(xtal::Crystal, max_valency::Int, element_to_int::Di
 end
 
 
-function edge_vectors(graph::MetaGraph, args::Dict{Symbol,Any})::Union{Tuple{Vector{Int},Vector{Int},Vector{Float64}},Tuple{Vector{Int},Vector{Int},Vector{Int},Vector{Float64}}}
+function edge_vectors(graph::MetaGraph, args::Dict{Symbol,Any})
     edge_count = ne(graph)
 	l = 2 * edge_count
     edg_srcs = zeros(Int, l)
@@ -178,9 +178,9 @@ function bond_angle_vecs(xtal::Crystal)::Tuple{Vector{Int},Vector{Int},Vector{In
 end
 
 
-function vspn_feature_matrix(g::MetaGraph, xtal::Crystal, max_valency::Int, element_to_int::Dict)::SparseMatrixCSC
+function vspn_feature_matrix(g::MetaGraph, xtal::Crystal, element_to_int::Dict)::SparseMatrixCSC
     nb_atom_types = length(element_to_int)
-    embedding_length = nb_atom_types + 1 + max_valency
+    embedding_length = nb_atom_types + 1
     X = zeros(Int, nv(g), embedding_length)
     for i in 1:nv(g)
         if get_prop(g, i, :type) == :A # atom
@@ -194,16 +194,16 @@ function vspn_feature_matrix(g::MetaGraph, xtal::Crystal, max_valency::Int, elem
 end
 
 
-function write_data(xtal::Crystal, name::String, element_to_int::Dict{Symbol,Int}, max_valency::Int, graphs_path::String, args::Dict{Symbol,Any}, config::Union{Nothing,VSPNConfig}=nothing)
+function write_data(xtal::Crystal, name::String, element_to_int::Dict{Symbol,Int}, graphs_path::String, args::Dict{Symbol,Any}, config::Union{Nothing,VSPNConfig}=nothing)
     X_name = chop(name, tail=4)
     if args[:vspn]
         cached("vspn/$X_name.jld2") do
             g = vspn_graph(xtal, config)
-            return g, vspn_feature_matrix(g, xtal, max_valency, element_to_int)
+            return g, vspn_feature_matrix(g, xtal, element_to_int)
         end
         return
     end
-    X = node_feature_matrix(xtal, max_valency, element_to_int)
+    X = node_feature_matrix(xtal, element_to_int)
 	# bond graph
     if args[:bonds]
         A, B, D = edge_vectors(xtal.bonds, args)
@@ -223,22 +223,22 @@ function write_data(xtal::Crystal, name::String, element_to_int::Dict{Symbol,Int
 end
 
 
-function process_example(xtal_name::String, element_to_int::Dict{Symbol,Int}, max_valency::Int, bonded_xtals_cache::String, graphs_path::String, args::Dict{Symbol,Any}, config::Union{Nothing,VSPNConfig}=nothing)
+function process_example(xtal_name::String, element_to_int::Dict{Symbol,Int}, bonded_xtals_cache::String, graphs_path::String, args::Dict{Symbol,Any}, config::Union{Nothing,VSPNConfig}=nothing)
     @load joinpath(bonded_xtals_cache, xtal_name) obj
     xtal, _ = obj
-    write_data(xtal, xtal_name, element_to_int, max_valency, graphs_path, args, config)
+    write_data(xtal, xtal_name, element_to_int, graphs_path, args, config)
 end
 
 
-function process_examples(good_xtals::Vector{String}, element_to_int::Dict{Symbol,Int}, max_valency::Int, args::Dict{Symbol,Any})
+function process_examples(good_xtals::Vector{String}, element_to_int::Dict{Symbol,Int}, args::Dict{Symbol,Any})
     if args[:vspn]
         config = VSPNConfig(args[:probe], args[:forcefield])
         @showprogress "Processing examples:" pmap(good_xtals) do x
-            process_example(x, element_to_int, max_valency, rc[:cache][:bonded_xtals], rc[:paths][:graphs], args, config)
+            process_example(x, element_to_int, rc[:cache][:bonded_xtals], rc[:paths][:graphs], args, config)
         end
     else
         @showprogress "Processing examples:" pmap(good_xtals) do x
-            process_example(x, element_to_int, max_valency, rc[:cache][:bonded_xtals], rc[:paths][:graphs], args)
+            process_example(x, element_to_int, rc[:cache][:bonded_xtals], rc[:paths][:graphs], args)
         end
     end
 end

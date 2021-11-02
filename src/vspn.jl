@@ -21,26 +21,30 @@ end
 
 function collect_atoms!(graph::MetaGraph, xtal::Crystal)
     for i ∈ 1:xtal.atoms.n
-        add_vertex!(graph, Dict(:type => :A, :species => xtal.atoms.species[i]))
+        add_vertex!(graph)
+        set_props!(graph, i, Dict(:type => :A, :species => xtal.atoms.species[i]))
     end
     for i ∈ 1:xtal.atoms.n
         for j ∈ neighbors(graph, i)
-            add_edge!(graph, i, j, Dict(:distance => get_prop(xtal.bonds, i, j, :distance), :type => :AA))
+            add_edge!(graph, i, j)
+            set_props!(graph, i, j, Dict(:distance => get_prop(xtal.bonds, i, j, :distance), :type => :AA))
         end
     end
 end
 
 
-function collect_vertices!(graph::MetaGraph, vt::VoroTess)
+function collect_vertices!(graph::MetaGraph, vt::VoroTess; make_bridges::Bool=false)
     points = unique_voro_pts(vt)
     for point ∈ points
         add_vertex!(graph, Dict(:type => :V, :point => point))
     end
     # make bridge edges to neighbor atoms, annotating distance
-    for i ∈ (vt.xtal.atoms.n + 1):(nv(graph)) # loop over vertex indices
-        point = get_prop(graph, i, :point)
-        for n ∈ point.cells # loop over indices (atoms) of adjacent cells
-            add_edge!(graph, i, n, Dict(:type => :AV, :distance => pbc_distance(vt.atom_pts[n, :], point.coords, vt.box_params)))
+    if make_bridges
+        for i ∈ (vt.xtal.atoms.n + 1):(nv(graph)) # loop over vertex indices
+            point = get_prop(graph, i, :point)
+            for n ∈ point.cells # loop over indices (atoms) of adjacent cells
+                add_edge!(graph, i, n, Dict(:type => :AV, :distance => pbc_distance(vt.atom_pts[n, :], point.coords, vt.box_params)))
+            end
         end
     end
 end
