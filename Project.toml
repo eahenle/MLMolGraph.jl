@@ -28,8 +28,9 @@ Xtals = "ede5f01d-793e-4c47-9885-c447d1f18d6d"
 [compat]
 Graphs = "^1.4.1"
 MetaGraphs = "^0.7.0"
+PorousMaterials = "^0.3.2"
 Reexport = "^1.1.0"
-Xtals = "^0.3.8"
+Xtals = "~0.3.8"
 
 [extras]
 ArgParse = "c7e460c6-2fb9-53a9-8c5b-16f535851c63"

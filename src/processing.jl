@@ -185,7 +185,7 @@ function vspn_feature_matrix(g::MetaGraph, xtal::Crystal, element_to_int::Dict):
     for i in 1:nv(g)
         if get_prop(g, i, :type) == :A # atom
             X[i, element_to_int[xtal.atoms.species[i]]] = 1
-            X[i, nb_atom_types + 1 + degree(xtal.bonds)[i]] = 1
+            #X[i, nb_atom_types + 1 + degree(xtal.bonds)[i]] = 1
         else # voro pt
             X[i, nb_atom_types + 1] = 1
         end
