@@ -41,23 +41,18 @@ function isgood(xtal_file::String)::Bool
 end
 
 
-function _bondNclassify(xtal_name::String)::Tuple{Crystal,Bool}
-    cached("bonded_xtals/$xtal_name") do 
-        @load joinpath(rc[:cache][:primitive], xtal_name) obj
-        xtal = obj
-        if infer_bonds!(xtal, true, calculate_vectors=true)
-            good = true
-        else
-            good = false
-        end
-        return (xtal, good)
-    end
-end
-
-
 function bondNclassify(xtal_list::Vector{String})::Vector{String}
-    @showprogress "Inferring bonds:" pmap(xtal_list) do x
-        _bondNclassify(x)
+    @showprogress "Inferring bonds:" pmap(xtal_list) do xtal_name
+        cached("bonded_xtals/$xtal_name") do 
+            @load joinpath(rc[:cache][:primitive], xtal_name) obj
+            xtal = obj
+            if infer_bonds!(xtal, true, calculate_vectors=true)
+                good = true
+            else
+                good = false
+            end
+            return (xtal, good)
+        end
     end
     good = SharedArray{Bool}(length(xtal_list))
     @showprogress "Classifying structures:" @distributed for i ∈ 1:length(xtal_list)
@@ -196,17 +191,13 @@ end
 
 function write_data(xtal::Crystal, name::String, element_to_int::Dict{Symbol,Int}, graphs_path::String, args::Dict{Symbol,Any}, config::Union{Nothing,VSPNConfig}=nothing)
     X_name = chop(name, tail=4)
-    if args[:vspn]
-        cached("vspn/$X_name.jld2") do
-            g = vspn_graph(xtal, config)
-            return g, vspn_feature_matrix(g, xtal, element_to_int)
-        end
-        return
-    end
-    X = node_feature_matrix(xtal, element_to_int)
 	# bond graph
     if args[:bonds]
+        if args[:verbose]
+            @info "Writing bonding graph for $X_name"
+        end
         A, B, D = edge_vectors(xtal.bonds, args)
+        X = node_feature_matrix(xtal, element_to_int)
         npzwrite(joinpath(graphs_path, X_name * "_node_features.npy"), X)
         npzwrite(joinpath(graphs_path, X_name * "_edges_src.npy"), A)
         npzwrite(joinpath(graphs_path, X_name * "_edges_dst.npy"), B)
@@ -219,6 +210,17 @@ function write_data(xtal::Crystal, name::String, element_to_int::Dict{Symbol,Int
         npzwrite(joinpath(graphs_path, X_name * "_angles_J.npy"), J)
         npzwrite(joinpath(graphs_path, X_name * "_angles_K.npy"), K)
         npzwrite(joinpath(graphs_path, X_name * "_angles_theta.npy"), θ)
+    end
+    # voro-graph
+    if args[:vspn]
+        if args[:verbose]
+            @info "Writing Voro-graph for $X_name"
+        end
+        cached("vspn/$X_name.jld2") do
+            voro_graph = vspn_graph(xtal, config, args)
+            return voro_graph, vspn_feature_matrix(voro_graph, xtal, element_to_int)
+        end
+        return
     end
 end
 

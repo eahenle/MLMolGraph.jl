@@ -84,14 +84,19 @@ end
 @everywhere using MLMolGraph
 
 MLMolGraph.banner()
-@info "Loading data from $(args[:data])"
-@info "Cache at $(args[:cache])"
-@info "Target: $(args[:target])"
+
+# check args
+valid, msg = MLMolGraph.validate_args(args)
+if !valid
+    error(msg)
+end
+
+@info "Program parameters" args...
 
 set_paths(args[:data])
 setup_cache(args[:cache])
 if args[:clear_cache]
-    @info "Clearing cache..."
+    @info "Clearing cache."
     clear_cache()
 end
 
