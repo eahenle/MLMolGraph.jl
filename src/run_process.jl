@@ -35,7 +35,7 @@ function run_process(args)
     # determine atom node encoding scheme
     @info "Analyzing structures."
     element_to_int, encoding_length = cached("encoding.jld2") do 
-        return encode(good_xtals, args)
+        return determine_encoding(good_xtals, args)
     end
     @info "Encoding:" element_to_int encoding_length
     CSV.write("atom_to_int.csv", element_to_int)

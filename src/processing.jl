@@ -73,19 +73,38 @@ function unique_elements(xtal_file::String, args)
 end
 
 
-function encode(xtal_list::Vector{String}, args)
+function maximum_valency(xtal_file::String, args)
+    @load joinpath(rc[:cache][:bonded_xtals], xtal_file) obj
+    xtal = obj[1]
+    max_val = maximum(degree(xtal.bonds))
+    if args[:verbose]
+        @info "$max_val maximum valency in $(xtal.name)"
+    end
+    return max_val
+end
+
+
+function determine_encoding(xtal_list::Vector{String}, args)
     n = length(xtal_list)
     all_elements = [keys(rc[:covalent_radii])...] # list of all elements known to Xtals
     elements = SharedArray{Bool}(length(all_elements)) # elements[i] == true iff keys(all_elements)[i] ∈ some xtal
     if args[:verbose]
-        @info "Encoding $n structures' atoms against list of $(length(all_elements)) elements"
+        @info "Encoding $n structures' atoms"
+        if contains(args[:one_hot], "n")
+            @info "$(length(all_elements)) elements"
+        end
     end
+    max_valency = 0
+    maxval_flag = contains(args[:one_hot], "v")
     @showprogress "Determining encoding scheme:" @distributed for i ∈ 1:n
         xtal_elements = unique_elements(xtal_list[i], args)
         elements[[findfirst(isequal(element), all_elements) for element in xtal_elements]] .= true
+        if maxval_flag
+            max_valency = maximum(max_valency, maximum_valency(xtal_list[i], args))
+        end
     end
 	element_to_int = Dict{Symbol,Int}([element => i for (i, element) ∈ enumerate(all_elements[elements])])
-    encoding_length = length(element_to_int)
+    encoding_length = length(element_to_int) + max_valency
 	return element_to_int, encoding_length
 end
 
