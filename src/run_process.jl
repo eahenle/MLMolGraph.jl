@@ -3,25 +3,21 @@
 Converts inputs at `rc[:data][:crystals]` into ML model data for `target` at `rc[:data]` and `rc[:data][:graphs]`
 """
 function run_process(args)
-    # check args
-    valid, msg = validate_args(args)
-    if !valid
-        error(msg)
-    end
-
     # get list of xtals
+    @info "Finding data."
     xtal_list = cached("xtal_list.jld2") do
         return readdir(rc[:paths][:crystals])
     end
     @info "$(length(xtal_list)) inputs."
 
-    # sample list, if requested
+    # sample list
     if args[:samples] ≠ 0
+        @info "Randomly sampling $(args[:samples])."
         xtal_list = sample(xtal_list, args[:samples], replace=false)
     end
 
     # process inputs to primitive cells
-    cached("primitives_done.jld2") do
+    cached("primitives_done.jld2") do ## TODO make a @cached macro to clean up this idiom
         if args[:primitive]
             xtals2primitive(xtal_list, args[:tolerance])
         else ## TODO make less hacky: have bondNclassify pull from different dir depending on args[:primitive]
@@ -30,53 +26,31 @@ function run_process(args)
         return true
     end
 
-
     # infer bonds, test quality
     good_xtals = cached("good_xtals.jld2") do
         return bondNclassify(xtal_list)
     end
     @info "$(length(good_xtals)) good bonded xtals."
 
-
     # determine atom node encoding scheme
-    element_to_int, max_valency, encoding_length = cached("encoding.jld2") do 
-        return encode(good_xtals)
+    @info "Analyzing structures."
+    element_to_int, encoding_length = cached("encoding.jld2") do 
+        return encode(good_xtals, args)
     end
-    @info "Encoding:" element_to_int max_valency encoding_length
+    @info "Encoding:" element_to_int encoding_length
     CSV.write("atom_to_int.csv", element_to_int)
     npzwrite("encoding_length.npy", encoding_length)
 
-
     # get the target data
+    @info "Reading target data."
     target_df = cached("targets.jld2") do 
-        @info "Reading target data..."
         return read_targets("properties.csv", good_xtals, args[:target])
     end
+    @info "Writing target data."
     CSV.write(joinpath("targets.csv"), target_df)
     npzwrite("y.npy", target_df[:, args[:target]])
 
-
     # process the graphs into ML inputs
-    process_examples(good_xtals, element_to_int, max_valency, args)
-
-    if args[:env] == "julia" && args[:vspn]
-        @info "Preparing VSPN data dictionary..."
-        # pack data into array for VSPN dataloader
-        cached("vspns.jld2") do
-            vspns = VSPN_Input_Struct[]
-            for (i, xtal) ∈ enumerate(good_xtals)
-                xtal_name = split(xtal, ".cif")[1]
-                @load joinpath(rc[:cache][:vspn], "$xtal_name.jld2") obj
-                g, X = obj
-                y = target_df[i, args[:target]]
-                push!(vspns, VSPN_Input_Struct(
-                    xtal_name,
-                    adjacency_matrix(g),
-                    sparse(X),
-                    y
-                ))
-            end
-            return vspns
-        end
-    end
+    @info "Processing example data."
+    process_examples(good_xtals, element_to_int, args)
 end

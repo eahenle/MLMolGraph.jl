@@ -1,7 +1,7 @@
 import Pkg
 Pkg.activate(".")
 
-using JLD2, LightGraphs, MetaGraphs, MLMolGraph
+using JLD2, Graphs, MetaGraphs, MLMolGraph
 import MLMolGraph.VoroPoint
 
 
@@ -10,11 +10,11 @@ function write_vis_data(xtal::Crystal, voro_graph::MetaGraph, label::String; col
     v_vert_idx = (vt.xtal.atoms.n + 1):nv(voro_graph)
     points = [get_prop(voro_graph, i, :point).coords for i in v_vert_idx]
 
-    # Cartesian coordinates and radii
+    # Cartesian coordinates and radii ## TODO generalize to triclinic cell?  currently only works for cubic/tetragonal/orthorhombic cells
     r = [get_prop(voro_graph, i, :radius) for i in v_vert_idx]
-    x = [p[1] for p in points]
-    y = [p[2] for p in points]
-    z = [p[3] for p in points]
+    x = [p[1] for p in points] .+ xtal.box.a / 2
+    y = [p[2] for p in points] .+ xtal.box.b / 2
+    z = [p[3] for p in points] .+ xtal.box.c / 2
     
     # format into XYZ format for VisIt
     spheres = "$(length(points))\n#\n"
@@ -27,6 +27,9 @@ function write_vis_data(xtal::Crystal, voro_graph::MetaGraph, label::String; col
         mkdir("spacefill")
     end
     write_xyz(xtal, "spacefill/atoms.xyz")
+    xtal2 = deepcopy(xtal)
+    remove_bonds!(xtal2)
+    write_xyz(replicate(xtal2, (2,2,2)), "spacefill/repd_atoms.xyz")
     write_vtk(xtal.box, "spacefill/cell.vtk")
     write_bond_information(xtal, "spacefill/bonds.vtk")
     ## TODO add V-V edges
