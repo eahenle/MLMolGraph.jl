@@ -2,7 +2,7 @@ using Documenter
 using MLMolGraph
 
 makedocs(
-    root = joinpath(dirname(pathof(Xtals)), "..", "docs"),
+    root = joinpath(dirname(pathof(MLMolGraph)), "..", "docs"),
     modules = [MLMolGraph],
     sitename = "MLMolGraph.jl",
     clean = true,
