@@ -17,7 +17,7 @@ using Graphs, JLD2, MetaGraphs, MLMolGraph, PorousMaterials, StatsBase
 begin
 	voro_dir = "data/cache/vspn"
 	bond_dir = "data/cache/bonded_xtals"
-	nb_graphs = 5000
+	nb_graphs = 100
 end;
 
 # ╔═╡ 6f89aa61-cb1c-4c55-b01f-1099e9a59376
@@ -55,8 +55,8 @@ begin
 	figure()
 	title("Voro-Graph Degree Distribution")
 	xlabel("Node Degree")
-	ylabel("Relative Frequency")
-	hist(degree_population, density=true, bins=maximum(degree_population)+1)
+	ylabel("Count")
+	hist(degree_population, bins=maximum(degree_population)+1)
 	gcf()
 end
 
@@ -221,8 +221,8 @@ begin
 	figure()
 	title("Voro-Graph Node Count Distribution")
 	xlabel("Number of Vertices")
-	ylabel("Relative Frequency")
-	hist(node_counts, density=true, bins=maximum(node_counts)+1)
+	ylabel("Count")
+	hist(node_counts, bins=maximum(node_counts)+1)
 	gcf()
 end
 
@@ -243,8 +243,8 @@ begin
 	figure()
 	title("Voro-Graph Connectivity Distribution")
 	xlabel("Number of Connected Components")
-	ylabel("Relative Frequency")
-	hist(conn_comps, density=true, bins=maximum(conn_comps)+1)
+	ylabel("Count")
+	hist(conn_comps, bins=maximum(conn_comps)+1)
 	gcf()
 end
 
@@ -265,8 +265,8 @@ begin
 	figure()
 	title("Voro-Graph Eccentricity Distribution")
 	xlabel("Graph Diameter")
-	ylabel("Relative Frequency")
-	hist(diameters, bins=Int(maximum(diameters)), density=true)
+	ylabel("Count")
+	hist(diameters, bins=Int(maximum(diameters)))
 	gcf()
 end
 
@@ -290,8 +290,8 @@ begin
 	figure()
 	title("Pore Volume Coverage Distribution")
 	xlabel("Proportion of Coverage")
-	ylabel("Relative Frequency")
-	hist(sphere_coverages, density=true, bins=20)
+	ylabel("Count")
+	hist(sphere_coverages, bins=20)
 	gcf()
 end
 
