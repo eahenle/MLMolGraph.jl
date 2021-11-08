@@ -17,7 +17,7 @@ using Graphs, JLD2, MetaGraphs, MLMolGraph, PorousMaterials, StatsBase
 begin
 	voro_dir = "data/cache/vspn"
 	bond_dir = "data/cache/bonded_xtals"
-	nb_graphs = 100
+	nb_graphs = 5000
 end;
 
 # ╔═╡ 6f89aa61-cb1c-4c55-b01f-1099e9a59376
