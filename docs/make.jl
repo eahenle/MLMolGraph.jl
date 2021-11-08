@@ -7,11 +7,11 @@ makedocs(
     sitename = "MLMolGraph.jl",
     clean = true,
     pages = [
-            "MLMolGraph" => "index.md",
-            "Graphs & AI" => "graph_ml.md",
-            "Processing" => "process_crystals.md",
-            "API Docs" => "api.md"
-            ],
+        "MLMolGraph" => "index.md",
+        "Graphs & AI" => "graph_ml.md",
+        "Processing" => "process_crystals.md",
+        "API Docs" => "api.md"
+    ],
     format = Documenter.HTML(assets = ["assets/flux.css"])
 )
 
