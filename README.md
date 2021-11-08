@@ -1,3 +1,7 @@
+| **Documentation** | **Build Status** | **Test Coverage** |
+|:---:|:---:|:---:|
+| [![](https://img.shields.io/badge/docs-latest-blue.svg)](https://SimonEnsemble.github.io/MLMolGraph.jl/stable) [![](https://img.shields.io/badge/docs-dev-blue.svg)](https://SimonEnsemble.github.io/MLMolGraph.jl/dev) | [![Build](https://github.com/eahenle/MLMolGraph/actions/workflows/ci_testing.yml/badge.svg)](https://github.com/eahenle/MLMolGraph/actions/workflows/ci_testing.yml) | [![codecov](https://codecov.io/gh/SimonEnsemble/MLMolGraph.jl/branch/master/graph/badge.svg?token=NEEDATOKEN)](https://codecov.io/gh/SimonEnsemble/MLMolGraph.jl) |
+
 Process crystals in `data/crystals` to machine-learning inputs for graph neural networks by:
 
 ```
