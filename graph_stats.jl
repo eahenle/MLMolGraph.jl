@@ -11,7 +11,7 @@ begin # dev-hack
 end
 
 # ╔═╡ 1e19d039-b180-409b-af52-610bec0fc169
-using Graphs, JLD2, MetaGraphs, MLMolGraph, PorousMaterials, StatsBase
+using CSV, DataFrames, Graphs, JLD2, MetaGraphs, MLMolGraph, PorousMaterials, StatsBase
 
 # ╔═╡ ea41da3c-53a4-4d60-8aa1-606903c3c3ae
 begin
@@ -45,6 +45,12 @@ end;
 
 # ╔═╡ 8b1d1c34-46fc-4e75-8a1a-aeb3f19be118
 crystals = load_xtal.(xtal_names, dir=bond_dir);
+
+# ╔═╡ 510099b1-baa5-4ee7-87ed-0b7a6c32d7c1
+begin
+	local target_df = CSV.read("targets.csv", DataFrame)
+	target_values = filter(r -> r.name ∈ xtal_names, target_df)[:, 2]
+end;
 
 # ╔═╡ cd76fb5e-0a52-4655-8ff2-a1ec580cb68d
 degree_population = reduce(vcat, degree.(voro_graphs));
@@ -93,6 +99,13 @@ md"Function to load the Crystal corresponding to a specific Voro-graph:"
 # ╔═╡ ab9d16c2-7748-4d17-97aa-61652287efd4
 md"Array of Crystals for the selected structures:"
 
+# ╔═╡ 1f2d6cd8-31ff-4913-8eca-e6dadeefaedb
+md"""
+### Target Values
+
+Array of $y$ values for the selected structures:
+"""
+
 # ╔═╡ 85ddd136-f67b-49c3-b01d-35c594299618
 md"""
 ## Calculate Properties
@@ -117,7 +130,10 @@ md"""
 """
 
 # ╔═╡ 43eb7e0d-5ad5-4f93-99de-3234ebde5dc0
-conn_comps = length.(connected_components.(voro_graphs));
+begin
+	conn_comps = connected_components.(voro_graphs)
+	nb_comps = length.(conn_comps)
+end;
 
 # ╔═╡ 472d365a-e669-4dd5-8898-1662b70dee30
 md"""
@@ -244,7 +260,7 @@ begin
 	title("Voro-Graph Connectivity Distribution")
 	xlabel("Number of Connected Components")
 	ylabel("Count")
-	hist(conn_comps, bins=maximum(conn_comps)+1)
+	hist(nb_comps, bins=maximum(nb_comps)+1)
 	gcf()
 end
 
@@ -307,6 +323,58 @@ md"""
 """
 end
 
+# ╔═╡ 15b6469d-0513-4c8c-a9c1-2a679f4e2353
+begin
+	figure()
+	plot()
+	title("Node Count Correlation")
+	xlabel("Node Count")
+	ylabel("Target Value")
+	scatter(node_counts, target_values, alpha=0.3)
+	gcf()
+end
+
+# ╔═╡ 5a68b961-366a-407e-9be3-11282d29dcc1
+md"""
+!!! note
+	Node count does not correlate with target.
+"""
+
+# ╔═╡ 45dbc5dc-6efa-4801-8c13-52ec0df880c6
+begin
+	figure()
+	title("Component Size Makeup")
+	xlabel("Connected Components")
+	ylabel("Component Size Node Proportion")
+	for (c_idx, cc_arr) in enumerate(conn_comps)
+		l = length(cc_arr)
+		scatter(l*ones(l), length.(conn_comps[c_idx]) ./ node_counts[c_idx])
+	end
+	gcf()
+end
+
+# ╔═╡ af8d276e-fa3b-41cb-a8cf-e6702604bc68
+md"""
+!!! note
+	The largest single component is between $60$ and $90$ % of each Voro-graph.
+"""
+
+# ╔═╡ 5664b784-5651-46d7-adc3-471af462e110
+begin
+	figure()
+	title("Connected Component Correlation")
+	xlabel("Connected Components")
+	ylabel("Volume Coverage")
+	scatter(length.(conn_comps), sphere_coverages)
+	gcf()
+end
+
+# ╔═╡ 5e08b3da-6965-40c9-a4d3-6920cab85530
+md"""
+!!! note
+	There does not appear to be any correlation between the number of connected components and the volume coverage.
+"""
+
 # ╔═╡ Cell order:
 # ╠═9ee1c6ad-8660-422c-a1f5-d2b6b93875b3
 # ╠═1e19d039-b180-409b-af52-610bec0fc169
@@ -325,6 +393,8 @@ end
 # ╠═f1f0f0f9-8e8d-445b-aa53-cb9ba1354ad3
 # ╟─ab9d16c2-7748-4d17-97aa-61652287efd4
 # ╠═8b1d1c34-46fc-4e75-8a1a-aeb3f19be118
+# ╟─1f2d6cd8-31ff-4913-8eca-e6dadeefaedb
+# ╠═510099b1-baa5-4ee7-87ed-0b7a6c32d7c1
 # ╟─85ddd136-f67b-49c3-b01d-35c594299618
 # ╟─3d123544-1e2b-488d-a5a3-4caf29684eca
 # ╠═cd76fb5e-0a52-4655-8ff2-a1ec580cb68d
@@ -358,3 +428,9 @@ end
 # ╟─e490a47d-49de-48cc-b245-cafdc4cef4fb
 # ╟─c262f198-47b3-4c1e-b3ba-1909c4905a3d
 # ╟─38ebc164-d519-4d97-b69d-a4b05613b9e7
+# ╟─15b6469d-0513-4c8c-a9c1-2a679f4e2353
+# ╟─5a68b961-366a-407e-9be3-11282d29dcc1
+# ╟─5664b784-5651-46d7-adc3-471af462e110
+# ╟─5e08b3da-6965-40c9-a4d3-6920cab85530
+# ╟─45dbc5dc-6efa-4801-8c13-52ec0df880c6
+# ╟─af8d276e-fa3b-41cb-a8cf-e6702604bc68

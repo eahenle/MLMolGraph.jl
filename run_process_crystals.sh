@@ -11,6 +11,6 @@ fi
 echo "julia $NB_PROC_ARG process_crystals.jl args..."
 
 # run the processing script w/ provided input flags
-julia $NB_PROC_ARG process_crystals.jl --bonds --vspn --forcefield UFF --probe CH4 --clear_cache
+julia $NB_PROC_ARG process_crystals.jl --bonds --vspn --forcefield UFF --probe CH4 --clear_cache --sample 10000
 
 ## ? what's the deal w/ warning about requiring OffsetArrays? Isn't resolved by `]add`

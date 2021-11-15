@@ -208,6 +208,18 @@ function vspn_feature_matrix(g::MetaGraph, xtal::Crystal, element_to_int::Dict):
 end
 
 
+function voro_edge_vectors(V::MetaGraph)::Tuple{Vector{Int},Vector{Int}}
+    # source and destination vectors
+    A = zeros(2*ne(V))
+    B = zeros(2*ne(V))
+    for (i, edge) in enumerate(edges(V))
+        A[2*i-1] = B[2*i-1] = src(edge)
+        B[2*i] = A[2*i] = dst(edge)
+    end
+    return A, B
+end
+
+
 function write_data(xtal::Crystal, name::String, element_to_int::Dict{Symbol,Int}, graphs_path::String, args::Dict{Symbol,Any}, config::Union{Nothing,VSPNConfig}=nothing)
     X_name = chop(name, tail=4)
 	# bond graph
@@ -235,11 +247,14 @@ function write_data(xtal::Crystal, name::String, element_to_int::Dict{Symbol,Int
         if args[:verbose]
             @info "Writing Voro-graph for $X_name"
         end
-        cached("vspn/$X_name.jld2") do
+        V, X = cached("vspn/$X_name.jld2") do
             voro_graph = vspn_graph(xtal, config, args)
             return voro_graph, vspn_feature_matrix(voro_graph, xtal, element_to_int)
         end
-        return
+        A, B = voro_edge_vectors(V)
+        npzwrite(joinpath(graphs_path, X_name * "_vspn_features.npy"), X)
+        npzwrite(joinpath(graphs_path, X_name * "_vspn_edges_src.npy"), A)
+        npzwrite(joinpath(graphs_path, X_name * "_vspn_edges_dst.npy"), B)
     end
 end
 
