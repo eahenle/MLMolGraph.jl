@@ -311,6 +311,15 @@ begin
 	gcf()
 end
 
+# ╔═╡ 52f7c44f-8933-4cc9-80f0-5e138c77e6fa
+minimum([cov for cov in sphere_coverages if !isnan(cov)])
+
+# ╔═╡ 53d69641-8b98-4106-955e-baba86b5ef26
+findfirst(cov -> isapprox(cov, 0.0893854748603352), sphere_coverages)
+
+# ╔═╡ 088c60cf-79ea-45df-9243-8edcf5b9b562
+crystals[35]
+
 # ╔═╡ 38ebc164-d519-4d97-b69d-a4b05613b9e7
 begin
 	local c = count(s -> s < 0.66, sphere_coverages)
@@ -340,6 +349,22 @@ md"""
 	Node count does not correlate with target.
 """
 
+# ╔═╡ 5664b784-5651-46d7-adc3-471af462e110
+begin
+	figure()
+	title("Connected Component Correlation")
+	xlabel("Connected Components")
+	ylabel("Volume Coverage")
+	scatter(length.(conn_comps), sphere_coverages, alpha=0.5)
+	gcf()
+end
+
+# ╔═╡ 5e08b3da-6965-40c9-a4d3-6920cab85530
+md"""
+!!! note
+	There does not appear to be any correlation between the number of connected components and the volume coverage.
+"""
+
 # ╔═╡ 45dbc5dc-6efa-4801-8c13-52ec0df880c6
 begin
 	figure()
@@ -356,23 +381,7 @@ end
 # ╔═╡ af8d276e-fa3b-41cb-a8cf-e6702604bc68
 md"""
 !!! note
-	The largest single component is between $60$ and $90$ % of each Voro-graph.
-"""
-
-# ╔═╡ 5664b784-5651-46d7-adc3-471af462e110
-begin
-	figure()
-	title("Connected Component Correlation")
-	xlabel("Connected Components")
-	ylabel("Volume Coverage")
-	scatter(length.(conn_comps), sphere_coverages)
-	gcf()
-end
-
-# ╔═╡ 5e08b3da-6965-40c9-a4d3-6920cab85530
-md"""
-!!! note
-	There does not appear to be any correlation between the number of connected components and the volume coverage.
+	The largest single component is between $50$ and $90$ % of each Voro-graph.
 """
 
 # ╔═╡ Cell order:
@@ -426,7 +435,10 @@ md"""
 # ╟─a4bfbbf2-0e5b-4277-aaa8-5126e7266ec9
 # ╟─5f14a579-beea-4bc1-8908-426eaabf04a1
 # ╟─e490a47d-49de-48cc-b245-cafdc4cef4fb
-# ╟─c262f198-47b3-4c1e-b3ba-1909c4905a3d
+# ╠═c262f198-47b3-4c1e-b3ba-1909c4905a3d
+# ╠═52f7c44f-8933-4cc9-80f0-5e138c77e6fa
+# ╠═53d69641-8b98-4106-955e-baba86b5ef26
+# ╠═088c60cf-79ea-45df-9243-8edcf5b9b562
 # ╟─38ebc164-d519-4d97-b69d-a4b05613b9e7
 # ╟─15b6469d-0513-4c8c-a9c1-2a679f4e2353
 # ╟─5a68b961-366a-407e-9be3-11282d29dcc1
