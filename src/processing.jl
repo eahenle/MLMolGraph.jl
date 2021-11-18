@@ -164,7 +164,7 @@ function edge_vectors(graph::MetaGraph, args::Dict{Symbol,Any})
 end
 
 
-function bond_angle_vecs(xtal::Crystal)::Tuple{Vector{Int},Vector{Int},Vector{Int},Vector{Float64}}
+function bond_angles(xtal::Crystal)::Tuple{Vector{Int},Vector{Int},Vector{Int},Vector{Float64}}
     I = Int[]
     J = Int[]
     K = Int[]
@@ -213,34 +213,59 @@ function voro_edge_vectors(V::MetaGraph)::Tuple{Vector{Int},Vector{Int}}
     A = zeros(2*ne(V))
     B = zeros(2*ne(V))
     for (i, edge) in enumerate(edges(V))
-        A[2*i-1] = B[2*i-1] = src(edge)
-        B[2*i] = A[2*i] = dst(edge)
+        A[2*i-1] = B[2*i] = src(edge)
+        B[2*i-1] = A[2*i] = dst(edge)
     end
     return A, B
 end
 
 
+function bond_vectors(xtal::Crystal)::Tuple{Vector{Int}, Vector{Int}, Matrix{Float64}}
+    n = 2*ne(xtal.bonds)
+    I = Int.(zeros(n))
+    J = Int.(zeros(n))
+    V = zeros(3, n)
+
+    for (i, edge) in enumerate(edges(xtal.bonds))
+        I[2*i-1] = J[2*i] = src(edge)
+        J[2*i-1] = I[2*i] = dst(edge)
+        V[:, 2*i-1] = get_bond_vector(xtal.bonds, src(edge), dst(edge))
+        V[:, 2*i]   = get_bond_vector(xtal.bonds, dst(edge), src(edge))
+    end
+
+    return I, J, V
+end
+
+
 function write_data(xtal::Crystal, name::String, element_to_int::Dict{Symbol,Int}, graphs_path::String, args::Dict{Symbol,Any}, config::Union{Nothing,VSPNConfig}=nothing)
     X_name = chop(name, tail=4)
+    # node features
+    X = node_feature_matrix(xtal, element_to_int)
+    npzwrite(joinpath(graphs_path, X_name * "_node_features.npy"), X)
 	# bond graph
     if args[:bonds]
         if args[:verbose]
             @info "Writing bonding graph for $X_name"
         end
         A, B, D = edge_vectors(xtal.bonds, args)
-        X = node_feature_matrix(xtal, element_to_int)
-        npzwrite(joinpath(graphs_path, X_name * "_node_features.npy"), X)
         npzwrite(joinpath(graphs_path, X_name * "_edges_src.npy"), A)
         npzwrite(joinpath(graphs_path, X_name * "_edges_dst.npy"), B)
         npzwrite(joinpath(graphs_path, X_name * "_euc.npy"), D)
     end
 	# bond angles
     if args[:angles]
-        I, J, K, θ = bond_angle_vecs(xtal)
+        I, J, K, θ = bond_angles(xtal)
         npzwrite(joinpath(graphs_path, X_name * "_angles_I.npy"), I)
         npzwrite(joinpath(graphs_path, X_name * "_angles_J.npy"), J)
         npzwrite(joinpath(graphs_path, X_name * "_angles_K.npy"), K)
         npzwrite(joinpath(graphs_path, X_name * "_angles_theta.npy"), θ)
+    end
+    # bond vectors
+    if args[:vectors]
+        I, J, V = bond_vectors(xtal)
+        npzwrite(joinpath(graphs_path, X_name * "_vectors_I.npy"), I)
+        npzwrite(joinpath(graphs_path, X_name * "_vectors_J.npy"), J)
+        npzwrite(joinpath(graphs_path, X_name * "_vectors_V.npy"), V)
     end
     # voro-graph
     if args[:vspn]

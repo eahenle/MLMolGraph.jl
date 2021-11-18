@@ -35,6 +35,10 @@ argparser = ArgParseSettings(
         arg_type = String
         default = ""
 
+    "--vectors", "-g"
+        help = "write bond vectors"
+        action = :store_true
+
     "--tolerance", "-n"
         help = "set net charge tolerance for Crystal()"
         arg_type = Float64
