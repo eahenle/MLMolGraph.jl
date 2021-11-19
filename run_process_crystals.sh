@@ -11,4 +11,4 @@ fi
 echo "julia $NB_PROC_ARG process_crystals.jl args..."
 
 # run the processing script w/ provided input flags
-julia $NB_PROC_ARG process_crystals.jl --bonds --angles --vectors --vspn --forcefield UFF --probe CH4 --clear_cache --sample 10
+julia $NB_PROC_ARG process_crystals.jl --bonds --angles --vectors --vspn --forcefield UFF --probe He --clear_cache --sample 1000
