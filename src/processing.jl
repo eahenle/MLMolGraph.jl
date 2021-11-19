@@ -178,13 +178,13 @@ function bond_angles(xtal::Crystal)::Tuple{Vector{Int},Vector{Int},Vector{Int},V
             end
             α = bond_angle(xtal, A, B, C)
             # ∠ABC = ∠CBA
-            append!(I, A)
-            append!(J, B)
-            append!(K, C)
+            append!(I, A-1)
+            append!(J, B-1)
+            append!(K, C-1)
             append!(θ, α)
-            append!(I, C)
-            append!(J, B)
-            append!(K, A)
+            append!(I, C-1)
+            append!(J, B-1)
+            append!(K, A-1)
             append!(θ, α)
         end
     end
@@ -213,8 +213,8 @@ function voro_edge_vectors(V::MetaGraph)::Tuple{Vector{Int},Vector{Int}}
     A = zeros(2*ne(V))
     B = zeros(2*ne(V))
     for (i, edge) in enumerate(edges(V))
-        A[2*i-1] = B[2*i] = src(edge)
-        B[2*i-1] = A[2*i] = dst(edge)
+        A[2*i-1] = B[2*i] = src(edge)-1
+        B[2*i-1] = A[2*i] = dst(edge)-1
     end
     return A, B
 end
@@ -227,8 +227,8 @@ function bond_vectors(xtal::Crystal)::Tuple{Vector{Int}, Vector{Int}, Matrix{Flo
     V = zeros(3, n)
 
     for (i, edge) in enumerate(edges(xtal.bonds))
-        I[2*i-1] = J[2*i] = src(edge)
-        J[2*i-1] = I[2*i] = dst(edge)
+        I[2*i-1] = J[2*i] = src(edge)-1
+        J[2*i-1] = I[2*i] = dst(edge)-1
         V[:, 2*i-1] = get_bond_vector(xtal.bonds, src(edge), dst(edge))
         V[:, 2*i]   = get_bond_vector(xtal.bonds, dst(edge), src(edge))
     end
