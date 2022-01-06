@@ -8,6 +8,9 @@ testfiles = [
 ]
 LOGGING_LEVEL = :Info
 
+@assert VERSION.major == 1
+@assert VERSION.minor > 0
+
 using Test, Logging
 global_logger(ConsoleLogger(stdout, getproperty(Logging, LOGGING_LEVEL)))
 
@@ -16,5 +19,7 @@ MLMolGraph.banner()
 
 for testfile ∈ testfiles
     @info "Running test/$(testfile)"
-    include(testfile)
+    @time include(testfile)
 end
+
+@info "Done!"
