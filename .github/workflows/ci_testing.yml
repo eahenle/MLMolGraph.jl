@@ -111,7 +111,7 @@ jobs: # run in parallel within workflow
         run:  julia --project ./docs/make.jl
 
   
-    cross-platform-os:
+  cross-platform-os:
     if: github.ref_name == 'master'
     strategy:
       fail-fast: true
