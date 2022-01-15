@@ -69,11 +69,6 @@ argparser = ArgParseSettings(
         arg_type = Symbol
         default = Symbol("working_capacity_vacuum_swing [mmol/g]")
 
-    "--nb_vs_bins", "-u"
-        help = "length of RBF soft-encoded vector for VSPN radii"
-        arg_type = Int
-        default = 5
-
     "--vspn", "-v"
         help = "write ML inputs for Voronoi sphere pore network"
         action = :store_true
