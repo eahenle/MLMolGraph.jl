@@ -192,7 +192,7 @@ function bond_angles(xtal::Crystal)::Tuple{Vector{Int},Vector{Int},Vector{Int},V
 end
 
 
-function vspn_feature_matrix(g::MetaGraph, xtal::Crystal, element_to_int::Dict)::SparseMatrixCSC
+function combo_vspn_feature_matrix(g::MetaGraph, xtal::Crystal, element_to_int::Dict)::SparseMatrixCSC
     nb_atom_types = length(element_to_int)
     embedding_length = nb_atom_types + 1
     X = zeros(Int, nv(g), embedding_length)
@@ -273,8 +273,9 @@ function write_data(xtal::Crystal, name::String, element_to_int::Dict{Symbol,Int
             @info "Writing Voro-graph for $X_name"
         end
         V, X = cached("vspn/$X_name.jld2") do
-            voro_graph = vspn_graph(xtal, config, args)
-            return voro_graph, vspn_feature_matrix(voro_graph, xtal, element_to_int)
+            V = vspn_graph(xtal, config, args)
+            X = [get_prop(V, i, :radius) for i in 1:nv(V)]
+            return V, X
         end
         A, B = voro_edge_vectors(V)
         npzwrite(joinpath(graphs_path, X_name * "_vspn_features.npy"), X)
