@@ -274,7 +274,7 @@ function write_data(xtal::Crystal, name::String, element_to_int::Dict{Symbol,Int
         end
         V, X = cached("vspn/$X_name.jld2") do
             V = vspn_graph(xtal, config, args)
-            X = [get_prop(V, i, :radius) for i in 1:nv(V)]
+            X = Float64[get_prop(V, i, :radius) for i in 1:nv(V)]
             return V, X
         end
         A, B = voro_edge_vectors(V)
