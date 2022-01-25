@@ -117,12 +117,11 @@ function read_targets(source::String, examples::Vector{String}, target_symbol::S
 end
 
 
+# one-hot encoding of atomic species
 function node_feature_matrix(xtal::Crystal, element_to_int::Dict{Symbol,Int})
-    embedding_length = length(element_to_int)
-    X = zeros(Int, xtal.atoms.n, embedding_length)
+    X = zeros(Int, xtal.atoms.n, length(element_to_int))
     for (i, atom) in enumerate(xtal.atoms.species)
         X[i, element_to_int[atom]] = 1
-        X[i, embedding_length - degree(xtal.bonds)[i] + 1] = 1
     end
     return X
 end
