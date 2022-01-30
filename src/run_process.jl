@@ -53,4 +53,6 @@ function run_process(args)
     # process the graphs into ML inputs
     @info "Processing example data."
     process_examples(good_xtals, element_to_int, args)
+
+    return good_xtals
 end
