@@ -50,5 +50,7 @@ end
 
 # check the deps, add if missing
 check_add_dep("freud", channel="conda-forge")
+check_add_dep("scipy")
+check_add_dep("pymatgen", channel="conda-forge")
 
 @info "Setup complete!"

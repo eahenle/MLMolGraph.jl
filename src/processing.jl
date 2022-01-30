@@ -1,3 +1,5 @@
+using XtalsPyTools
+
 function loadcheck(xtal_list::Vector{String}, tolerance::Float64)
     @showprogress "Checking file loadability:" @distributed for xtal_file ∈ xtal_list
         xtal_filename = String(split(xtal_file, "/")[end])
@@ -16,7 +18,7 @@ end
 
 
 # TODO add optional arguments for changing the net_charge_tol
-function xtals2primitive(xtal_list::Vector{String}, tolerance::Float64)
+function xtals2primitive(xtal_list::Vector{String}, tolerance::Float64=1e-5)
     @showprogress "Converting to primitive cells:" @distributed for xtal_file ∈ xtal_list
         xtal_filename = String(split(xtal_file, "/")[end])
         cached("primitive/$xtal_filename") do 
@@ -63,7 +65,7 @@ end
 
 
 function unique_elements(xtal_file::String, args)
-	@load joinpath(rc[:cache][:bonded_xtals], xtal_file) obj
+    @load joinpath(rc[:cache][:bonded_xtals], xtal_file) obj
     xtal = obj[1]
     elements = unique(xtal.atoms.species)
     if args[:verbose]
@@ -103,9 +105,9 @@ function determine_encoding(xtal_list::Vector{String}, args)
             max_valency = maximum(max_valency, maximum_valency(xtal_list[i], args))
         end
     end
-	element_to_int = Dict{Symbol,Int}([element => i for (i, element) ∈ enumerate(all_elements[elements])])
+    element_to_int = Dict{Symbol,Int}([element => i for (i, element) ∈ enumerate(all_elements[elements])])
     encoding_length = length(element_to_int) + max_valency
-	return element_to_int, encoding_length
+    return element_to_int, encoding_length
 end
 
 
@@ -129,7 +131,7 @@ end
 
 function edge_vectors(graph::MetaGraph, args::Dict{Symbol,Any})
     edge_count = ne(graph)
-	l = 2 * edge_count
+    l = 2 * edge_count
     edg_srcs = zeros(Int, l)
     edg_dsts = zeros(Int, l)
     if args[:bonds]
@@ -241,7 +243,7 @@ function write_data(xtal::Crystal, name::String, element_to_int::Dict{Symbol,Int
     # node features
     X = node_feature_matrix(xtal, element_to_int)
     npzwrite(joinpath(graphs_path, X_name * "_node_features.npy"), X)
-	# bond graph
+    # bond graph
     if args[:bonds]
         if args[:verbose]
             @info "Writing bonding graph for $X_name"
@@ -251,7 +253,7 @@ function write_data(xtal::Crystal, name::String, element_to_int::Dict{Symbol,Int
         npzwrite(joinpath(graphs_path, X_name * "_edges_dst.npy"), B)
         npzwrite(joinpath(graphs_path, X_name * "_euc.npy"), D)
     end
-	# bond angles
+    # bond angles
     if args[:angles]
         I, J, K, θ = bond_angles(xtal)
         npzwrite(joinpath(graphs_path, X_name * "_angles_I.npy"), I)
