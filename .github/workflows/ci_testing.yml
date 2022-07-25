@@ -1,0 +1,110 @@
+name: Build
+
+on:
+  push: # run on push to main branch
+    branches: [ main ]
+  pull_request: # run on PR against main branch
+    branches: [ main ]
+  workflow_dispatch: # run on button-press in Actions tab
+
+concurrency: # only allow the most recent workflow to execute
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env: # environment variables
+  julia_version: '1.7'
+
+jobs: # run in parallel within workflow
+
+  unit-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps: # run in series within job
+      - name: checkout commit
+        uses: actions/checkout@master
+
+      - name: set up Julia
+        uses: julia-actions/setup-julia@latest
+        with:
+          version: ${{ env.julia_version }}
+      
+      - name: build julia package
+        uses: julia-actions/julia-buildpkg@latest
+
+      - name: install dependencies # installs everything for both Julia and Python (including torch, freud, pymatgen)
+        run: |
+          julia quick_setup.jl
+          julia --project -e 'import Pkg; Pkg.add.(["Coverage"])'
+
+      - name: julia tests # run the [Julia] data-processing unit tests
+        run: julia --project --code-coverage -e 'import Pkg; Pkg.test(coverage=true)'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DOCUMENTER_KEY: ${{ secrets.DOCUMENTER_KEY }}
+
+      - name: process julia test coverage
+       uses: julia-actions/julia-processcoverage@v1
+
+      - name: shell script test # run the pipeline end-to-end
+        run: |
+          cp -r ./test/data/* ./data/
+          bash ./test/test.sh
+
+      - name: upload coverage report
+        uses: codecov/codecov-action@v2
+        with:
+          verbose: true
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+
+  deploy-docs:
+    if: github.ref_name == 'main'
+    needs: unit-tests
+    timeout-minutes: 30
+    runs-on: ubuntu-latest
+
+    env:
+      GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+      DOCUMENTER_KEY: ${{secrets.DOCUMENTER_KEY}}
+
+    steps:
+      - name: checkout commit
+        uses: actions/checkout@v2
+
+      - name: set up Julia
+        uses: julia-actions/setup-julia@latest
+        with:
+          version: ${{env.julia_version}}
+
+      - name: build package
+        uses: julia-actions/julia-buildpkg@latest
+
+      - name: install dependencies
+        run:  julia --project -e 'import Pkg; Pkg.add.(["Documenter"])'
+
+      - name: build and deploy docs
+        run:  julia --project ./docs/make.jl
+
+  
+  aqua-jl:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: checkout commit
+        uses: actions/checkout@v2
+
+      - name: set up Julia
+        uses: julia-actions/setup-julia@latest
+        with:
+          version: ${{ env.julia_version }}
+
+      - name: build package
+        uses: julia-actions/julia-buildpkg@latest
+
+      - name: install dependencies
+        run: julia --project --color=yes -e 'import Pkg; Pkg.add.(["Aqua"])'
+
+      - name: Aqua.jl
+        run: julia --project --color=yes ./test/aqua.jl
