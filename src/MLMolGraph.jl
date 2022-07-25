@@ -1,35 +1,36 @@
 module MLMolGraph
 using Distributed
 
-using CSV, DataFrames, FIGlet, JLD2, Graphs, LinearAlgebra, Logging, MetaGraphs, NPZ, ProgressMeter, PyCall, Reexport, SharedArrays, SparseArrays, StatsBase
-
-@reexport using PorousMaterials
+using CSV, DataFrames, FIGlet, Graphs, JLD2, LinearAlgebra, Logging, MetaGraphs, ProgressMeter, PyCall, SharedArrays, Xtals
+#    , IOCapture, 
+    # ,  , SparseArrays, StatsBase, 
 
 import Base.show, Base.display
 
-include("voronoi.jl")
-include("vspn.jl")
-include("cache_tools.jl")
 include("processing.jl")
 include("run_process.jl")
 include("misc.jl")
+include("argument_parsing.jl")
+include("export_data.jl")
 
-function __init__()
-    rc[:cache] = Dict()
-    setup_cache(joinpath(pwd(), "data", "cache"))
-    rc[:paths][:graphs] = joinpath(rc[:paths][:data], "graphs")
-    if !isdirpath(rc[:paths][:graphs])
-        mkpath(rc[:paths][:graphs])
-    end
+function load_pydep(dep::String)
     try
-        rc[:freud] = pyimport("freud")
+        rc[Symbol(dep)] = pyimport(dep)
     catch
-        rc[:freud] = nothing
-        @warn "Python package freud not installed"
+        rc[Symbol(dep)] = nothing
+        @warn "Python dependency $dep not found."
     end
 end
 
-export  cached, xtals2primitive, bondNclassify, encode, read_targets, process_examples, clear_cache, run_process, 
-        vspn_graph, voronoi_tesselation, setup_cache, VSPN_Input_Struct
+function __init__()
+    for dir in values(rc[:paths])
+        if ! isdir(dir)
+            mkpath(dir)
+        end
+    end
+    load_pydep.(["torch", "numpy", "pickle"])
+end
+
+export  run_process, parse_args, make_arg_dict
 
 end

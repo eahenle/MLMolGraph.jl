@@ -10,6 +10,6 @@ Getting started is easy!
 ``` Pkg> add MLMolGraph```
 
 3. In the REPL or a script, import the namespace:
-```julia using MLMolGraph```
+```julia> using MLMolGraph```
 
-Once that's done, you're ready to go.  If your use case is covered by the included [processing script](process_crystals), you can even skip step 3.  More about that on the following pages.  If you create your own structure processing pipeline using `MLMolGraph`, please consider making a [pull request](https://github.com/SimonEnsemble/MLMolGraph.jl) to add it to the script!
+Once that's done, you're ready to go!

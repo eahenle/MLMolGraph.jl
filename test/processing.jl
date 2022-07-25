@@ -1,16 +1,18 @@
 module Processing_test
 
-using Test, MLMolGraph, JLD2, XtalsPyTools
+using Graphs, Test, MLMolGraph, XtalsPyTools
+
+temp_dir = joinpath(pwd(), ".temp")
+if !isdir(temp_dir)
+    mkpath(temp_dir)
+end
 
 @testset "xtals2primitive" begin
-    clear_cache()
-    xtal_name = "str_m2_o10_o29_pcu_sym.138.cif"
-    xtal = Crystal(xtal_name)
-    @test xtal.atoms.n == 92
-    xtals2primitive([xtal_name])
-    @load joinpath(rc[:cache][:primitive], xtal_name) obj
-    xtal = obj
-    @test xtal.atoms.n == 92
+    xtal_name = "str_m3_o2_o18_pcu_sym.41"
+    MLMolGraph.loadcheck([xtal_name], 1e-4, temp_dir)
+    MLMolGraph.xtals2primitive([xtal_name], temp_dir)
+    xtal = MLMolGraph.load_data(xtal_name, temp_dir)[:primitive_cell]
+    @test xtal.atoms.n == 90
 end
 
 end

@@ -4,15 +4,13 @@ using MLMolGraph
 makedocs(
     root = joinpath(dirname(pathof(MLMolGraph)), "..", "docs"),
     modules = [MLMolGraph],
-    sitename = "MLMolGraph.jl",
+    sitename = "MLMolGraph",
     clean = true,
     pages = [
         "MLMolGraph" => "index.md",
-        "Graphs & AI" => "graph_ml.md",
-        "Processing" => "process_crystals.md",
-        "API Docs" => "api.md"
+        "Graphs & AI" => "graph_ml.md"
     ],
     format = Documenter.HTML(assets = ["assets/flux.css"])
 )
 
-deploydocs(repo = "github.com/SimonEnsemble/MLMolGraph.jl.git")
+deploydocs(repo = "github.com/SimonEnsemble/MLMolGraph.git")

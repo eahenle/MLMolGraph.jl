@@ -1,15 +1,14 @@
 import Pkg
 
-
 # tries to load a Python dependency; on failure, adds the dependency via Conda
-function check_add_dep(pkg; channel="")
+function check_add_dep(pkg; channel="", altname=nothing)
     try
         @info "Checking dependency: $pkg"
-        pyimport(pkg)
+        pyimport(isnothing(altname) ? pkg : altname)
     catch
         @info "Installing $pkg..."
         Conda.add(pkg, channel=channel)
-        pyimport(pkg)
+        pyimport(isnothing(altname) ? pkg : altname)
         @info "$pkg install verified."
     end
 end
@@ -49,8 +48,8 @@ catch # if not, install it
 end
 
 # check the deps, add if missing
-check_add_dep("freud", channel="conda-forge")
 check_add_dep("scipy")
 check_add_dep("pymatgen", channel="conda-forge")
+check_add_dep("pytorch", channel="pytorch", altname="torch")
 
 @info "Setup complete!"

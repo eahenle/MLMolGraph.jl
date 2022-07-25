@@ -1,13 +1,4 @@
-data/*
-test/data/Graphs/*
+data/
+test/.temp
+*.PKL
 Manifest.toml
-test/data/*
-test/data/cache/*
-test/*.csv
-test/*.npy
-.vscode
-*.csv
-*.npy
-.temp*
-*.xyz
-*.vtk
