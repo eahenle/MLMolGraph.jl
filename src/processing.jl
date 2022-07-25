@@ -112,12 +112,13 @@ function edge_vectors(graph::MetaGraph, type::Symbol)
     l = 2 * edge_count
     edg_srcs = zeros(Int, l)
     edg_dsts = zeros(Int, l)
+    edg_prop = zeros(Float64, l)
     for (i, edge) in enumerate(edges(graph))
         edg_srcs[i] = edg_dsts[i + edge_count] = edge.src
         edg_dsts[i] = edg_srcs[i + edge_count] = edge.dst
-        edg_lens[i] = edg_lens[i + edge_count] = get_prop(graph, edge, :distance)
+        edg_prop[i] = edg_prop[i + edge_count] = get_prop(graph, edge, :distance)
     end
-    return edg_srcs, edg_dsts
+    return edg_srcs, edg_dsts, edg_prop
 end
 
 
@@ -137,7 +138,7 @@ end
 function process_examples(good_xtals::Vector{String}, element_to_int::Dict{Symbol,Int}, df::DataFrame, args::Dict{Symbol,Any}, temp_dir::String)::Vector{Bool}
     @assert length(good_xtals) > 0 "No inputs"
     @showprogress "Processing examples " pmap(good_xtals) do xtal_name
-        write_data(load_data(xtal_name, temp_dir), xtal_name, element_to_int, df, args, temp_dir, nothing)
+        write_data(load_data(xtal_name, temp_dir), xtal_name, element_to_int, df, args, temp_dir)
     end
     good = trues(length(good_xtals))
     return good

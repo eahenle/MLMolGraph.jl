@@ -25,6 +25,8 @@ function consolidate_data(good_xtals::Vector{String}, element_to_int::Dict{Symbo
     dataset[:atom_features] = @showprogress "Collecting atom features " pmap(xtal_name -> load_data(xtal_name, temp_dir)[:atom_features], good_xtals)
 
 	dataset[:graph_edges] = @showprogress "Collecting graph edge matrices " [collect_graph_edge_matrix(xtal_name, :bond_graph, temp_dir) for xtal_name in good_xtals]
+
+    dataset[:pvec] = args[:pvec] ? error("##! TODO: pvec implementation") : nothing
    
     return dataset
 end
@@ -114,8 +116,7 @@ function collect_graph_edge_matrix(xtal_name::String, graphkey::Symbol, temp_dir
 		:AA => 1
 	])
 	for (i, e) in enumerate(edges(graph))
-        type_labeled = :type in keys(props(graph, e))
-		gem[:, i] .= src(e), dst(e), type_labeled ? edge_label[get_prop(graph, e, :type)] : edge_label[:AA]
+		gem[:, i] .= src(e), dst(e), :type in keys(props(graph, e)) ? edge_label[get_prop(graph, e, :type)] : edge_label[:AA]
 	end
 
 	return Matrix(gem')

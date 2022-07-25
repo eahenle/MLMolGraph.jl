@@ -1,10 +1,10 @@
 testfiles = [
-    "processing.jl"
     "run_process.jl"
+    "processing.jl"
     "argument_parsing.jl"
     "misc.jl"
 ]
-const DEBUG = false #* toggle debug mode
+const DEBUG = true #* toggle debug mode
 
 @assert VERSION.major == 1
 @assert VERSION.minor > 6

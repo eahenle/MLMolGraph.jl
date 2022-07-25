@@ -5,6 +5,7 @@ DEFAULT_ARGS = Dict(
     :bonds          => false,
     :angles         => false,
     :verbose        => false,
+    :pvec           => false,
 
     # string args
     :data               => rc[:paths][:data],
@@ -76,4 +77,8 @@ DEFAULT_ARGS = Dict(
     "--dataset_output"
         help = "path to file where processed data will be saved"
         default = DEFAULT_ARGS[:dataset_output]
+
+    "--pvec"
+        help = "whether or not to look for physical vector information"
+        default = DEFAULT_ARGS[:pvec]
 end

@@ -1,8 +1,9 @@
 module MLMolGraph
 using Distributed
 
-# using CSV, DataFrames, FIGlet, JLD2, Graphs, IOCapture, LinearAlgebra, Logging, MetaGraphs, 
-    ProgressMeter, PyCall, SharedArrays, SparseArrays, StatsBase, Xtals
+using CSV, DataFrames, FIGlet, Graphs, JLD2, LinearAlgebra, Logging, MetaGraphs, ProgressMeter, PyCall, SharedArrays, Xtals
+#    , IOCapture, 
+    # ,  , SparseArrays, StatsBase, 
 
 import Base.show, Base.display
 

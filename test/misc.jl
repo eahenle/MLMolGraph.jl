@@ -1,6 +1,6 @@
 module Misc_test
 
-using Test, MLMolGraph
+using Test, MLMolGraph, Xtals
 import MLMolGraph.pbc_distance
 
 @testset "PBC distance" begin
@@ -14,7 +14,7 @@ import MLMolGraph.pbc_distance
     @test pbc_distance(points[:,1], points[:,8], cubic_box) == √(0.75)
 
     triclinic_box = Box(1., 1., 1., π/3, π/3, π/3)
-    @test all([pbc_distance(pt_i, pt_j, cubic_box) == pbc_distance(pt_j, pt_i, triclinic_box) for i in 1:8 for j in 1:8])
+    @test all([pbc_distance(points[:,i], points[:,j], cubic_box) == pbc_distance(points[:,j], points[:,i], triclinic_box) for i in 1:8 for j in 1:8])
 end
 
 end

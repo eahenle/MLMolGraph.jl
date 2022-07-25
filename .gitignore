@@ -1,1 +1,4 @@
 data/
+test/.temp
+*.PKL
+Manifest.toml

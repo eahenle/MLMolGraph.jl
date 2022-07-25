@@ -1,6 +1,6 @@
 module Run_process_test
 
-using CSV, DataFrames, Graphs, MetaGraphs, PyCall, Test, MLMolGraph, XtalsPyTools
+using CSV, DataFrames, Graphs, MetaGraphs, PyCall, Test, MLMolGraph, Xtals, XtalsPyTools
 
 target = "working_capacity_vacuum_swing [mmol/g]"
 
@@ -29,11 +29,10 @@ function rebuild_graph(xtal_name::String, int_to_atom::Dict{Int, Symbol}, temp_d
     end
     # copy edges
 	for (s, d) in zip(es, ed)
-        # translate from python indexing
-        s += 1
-        d += 1
-        @assert s <= size(X, 1) && d <= size(X, 1) && s >= 1 && d >= 1 "invalid index in edge arrays for $xtal_name"
-		@assert add_edge!(g, s, d)
+        if !has_edge(g, d, s)
+            @assert s <= size(X, 1) && d <= size(X, 1) && s >= 1 && d >= 1 "invalid index in edge arrays for $xtal_name: s = $s ($(maximum(es))), d = $d ($(maximum(ed))), [X] = $(size(X))"
+            @assert add_edge!(g, s, d) nv(g), s, d
+        end
 	end
 	return g
 end
@@ -60,7 +59,7 @@ end
 	"""
 	dataset = py"dataset"
     atom_x = dataset["atom_x"]
-    Xs = [[[atom_x[graph][node][i].item() for i in eachindex(atom_x[graph][node])] for node in eachindex(atom_x[graph])] for graph in eachindex(atom_x)]
+    Xs = [[[get(get(atom_x[graph], node-1), i-1).item() for i in 1:length(get(atom_x[graph], node-1))] for node in 1:length(atom_x[graph])] for graph in eachindex(atom_x)]
 
     # test that feature matrix rows are one-hot encodings
     @test all([all([sum(Xs[i][j]) .== 1 for j in eachindex(Xs[i])]) for i in eachindex(Xs)])
