@@ -122,6 +122,23 @@ function edge_vectors(graph::MetaGraph, type::Symbol)
 end
 
 
+function calculate_elemental_fractions(xtal::Crystal, element_to_int::Dict{Symbol,Int})::Vector{Float64}
+	fractions = zeros(length(element_to_int))
+	ef = empirical_formula(xtal)
+    n = sum(values(ef))
+    fractions[[element_to_int[x] for x in Symbol.(keys(ef))]] .= [y/n for y in values(ef)]
+	return fractions
+end
+
+
+function calculate_elemental_densities(xtal::Crystal, element_to_int::Dict{Symbol,Int})::Vector{Float64}
+	densities = zeros(length(element_to_int))
+	ef = empirical_formula(xtal)
+    densities[[element_to_int[x] for x in Symbol.(keys(ef))]] .= [xtal.atoms.n * y / xtal.box.Ω for y in values(ef)]
+	return densities
+end
+
+
 function write_data(xtal_data::Dict, name::String, element_to_int::Dict{Symbol,Int}, df::DataFrame, args::Dict{Symbol,Any}, temp_dir::String)
 	xtal = xtal_data[:primitive_cell]
     # node features
@@ -130,6 +147,9 @@ function write_data(xtal_data::Dict, name::String, element_to_int::Dict{Symbol,I
     xtal_data[:bond_edges] = args[:bonds] ? edge_vectors(xtal_data[:bond_graph], :bonds) : nothing
     # pvec
     xtal_data[:pvec] = args[:pvec] ? [df[findfirst(n -> n == name, df.name), prop] for prop in args[:pvec_columns]] : nothing
+    # element density matrices
+    xtal_data[:elemental_fractions] = calculate_elemental_fractions(xtal, element_to_int)
+    xtal_data[:elemental_densities] = calculate_elemental_densities(xtal, element_to_int)
 
     save_data(name, xtal_data, temp_dir)
 end

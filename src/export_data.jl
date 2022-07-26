@@ -24,9 +24,13 @@ function consolidate_data(good_xtals::Vector{String}, element_to_int::Dict{Symbo
     # collect atom node feature matrices into dictionary
     dataset[:atom_features] = @showprogress "Collecting atom features " pmap(xtal_name -> load_data(xtal_name, temp_dir)[:atom_features], good_xtals)
 
+    ##! distribute process
 	dataset[:graph_edges] = @showprogress "Collecting graph edge matrices " [collect_graph_edge_matrix(xtal_name, :bond_graph, temp_dir) for xtal_name in good_xtals]
 
     dataset[:pvec] = args[:pvec] ? error("##! TODO: pvec implementation") : nothing
+
+    dataset[:elemental_fractions] = @showprogress "Collecting elemental fractions " pmap(xtal_name -> load_data(xtal_name, temp_dir)[:elemental_fractions], good_xtals)
+    dataset[:elemental_densities] = @showprogress "Collecting elemental densities " pmap(xtal_name -> load_data(xtal_name, temp_dir)[:elemental_densities], good_xtals)
    
     return dataset
 end
@@ -75,6 +79,9 @@ function export_data(dataset::Dict{Symbol, Any}, args::Dict)
 
 	atom_to_int = dataset[:element_to_encoding]
 
+    elemental_densities = dataset[:elemental_densities]
+    elemental_fractions = dataset[:elemental_fractions]
+
     data_dict = Dict([
         "xtal_name"         => xtal_name
         "atom_x"            => atom_x
@@ -82,6 +89,8 @@ function export_data(dataset::Dict{Symbol, Any}, args::Dict)
         "y"                 => y
 		"atom_to_int"       => atom_to_int
 		"atom_edge_index"   => atom_edge_index
+        "elemental_densities" => elemental_densities
+        "elemental_fractions" => elemental_fractions
     ])
 
     # write dataset dictionary to python-readable binary

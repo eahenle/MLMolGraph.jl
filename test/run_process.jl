@@ -97,4 +97,15 @@ end
     @test all(test_flags)
 end
 
+@testset "element fractions" begin
+    py"""
+	import pickle
+	file = open("_DATASET_.PKL", "rb")
+	dataset = pickle.load(file)
+	file.close()
+	"""
+	dataset = py"dataset"
+    @test all(sum.(fs for fs in dataset["elemental_fractions"]) .≈ 1)
+end
+
 end
