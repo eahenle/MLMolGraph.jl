@@ -19,7 +19,7 @@ function consolidate_data(good_xtals::Vector{String}, element_to_int::Dict{Symbo
     dataset[:bond_angles] = args[:angles] ? (@showprogress "Collecting bond angles " pmap(xtal_name -> load_data(xtal_name, temp_dir)[:angles], good_xtals)) : nothing
 
     # collect bond distances into dictionary
-    dataset[:bond_distances] = @showprogress "Collecting bond distances " pmap(xtal_name -> load_data(xtal_name, temp_dir)[:bond_edges][3][:], good_xtals)
+    #dataset[:bond_distances] = @showprogress "Collecting bond distances " pmap(xtal_name -> load_data(xtal_name, temp_dir)[:bond_edges][3][:], good_xtals)
 	
     # collect atom node feature matrices into dictionary
     dataset[:atom_features] = @showprogress "Collecting atom features " pmap(xtal_name -> load_data(xtal_name, temp_dir)[:atom_features], good_xtals)
