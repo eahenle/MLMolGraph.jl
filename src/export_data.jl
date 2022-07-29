@@ -75,7 +75,9 @@ function export_data(dataset::Dict{Symbol, Any}, args::Dict)
 	
 	x_p = !isnothing(dataset[:pvec]) ? [torch.tensor(numpy.array(pvec), dtype=torch.float) for pvec in dataset[:pvec]] : nothing
 	
-	y = !isnothing(dataset[:targets]) ? torch.tensor(numpy.array(dataset[:targets][:, dataset[:args][:target]]), dtype=torch.float) : nothing
+	y = args[:target] == "" ? torch.tensor(numpy.array(Matrix(dataset[:targets][:, [col for col in names(dataset[:targets]) if isa(dataset[:targets][1, col], Number)]])'), dtype=torch.float) : torch.tensor(numpy.array(dataset[:targets][:, dataset[:args][:target]]), dtype=torch.float)
+
+    target_name = args[:target] == "" ? Dict([x => i-1 for (i,x) in enumerate([col for col in names(dataset[:targets]) if isa(dataset[:targets][1, col], Number)])]) : args[:target]
 
 	atom_to_int = dataset[:element_to_encoding]
 
@@ -83,12 +85,13 @@ function export_data(dataset::Dict{Symbol, Any}, args::Dict)
     elemental_fractions = dataset[:elemental_fractions]
 
     data_dict = Dict([
-        "xtal_name"         => xtal_name
-        "atom_x"            => atom_x
-        "x_p"               => x_p
-        "y"                 => y
-		"atom_to_int"       => atom_to_int
-		"atom_edge_index"   => atom_edge_index
+        "xtal_name"           => xtal_name
+        "atom_x"              => atom_x
+        "x_p"                 => x_p
+        "y"                   => y
+        "target_name"         => target_name
+		"atom_to_int"         => atom_to_int
+		"atom_edge_index"     => atom_edge_index
         "elemental_densities" => elemental_densities
         "elemental_fractions" => elemental_fractions
     ])

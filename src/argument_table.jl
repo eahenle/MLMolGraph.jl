@@ -60,7 +60,7 @@ DEFAULT_ARGS = Dict(
         default = DEFAULT_ARGS[:samples]
 
     "--target"
-        help = "name of target column for constraining values"
+        help = """name of target column for constraining values. if left blank, all targets will be included in the dataset["y"] tensor."""
         arg_type = String
         default = DEFAULT_ARGS[:target]
 
