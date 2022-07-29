@@ -134,7 +134,7 @@ end
 function calculate_elemental_densities(xtal::Crystal, element_to_int::Dict{Symbol,Int})::Vector{Float64}
 	densities = zeros(length(element_to_int))
 	ef = empirical_formula(xtal)
-    densities[[element_to_int[x] for x in Symbol.(keys(ef))]] .= values(ef) ./ sum(values(empirical_formula(xtal))) / xtal.box.Ω
+    densities[[element_to_int[x] for x in Symbol.(keys(ef))]] .= values(ef) .* (xtal.atoms.n * sum(values(empirical_formula(xtal))) / xtal.box.Ω)
 	return densities
 end
 
